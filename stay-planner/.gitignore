@@ -20,6 +20,13 @@ dist/
 build/
 out/
 
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+data/
+server/data/
+
 # Runtime data
 pids
 *.pid

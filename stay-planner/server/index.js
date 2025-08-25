@@ -3,6 +3,9 @@ const cors = require('cors');
 const morgan = require('morgan');
 require('dotenv').config();
 
+// Import database
+const db = require('./db');
+
 const app = express();
 const PORT = process.env.PORT || 4000;
 
@@ -21,6 +24,24 @@ app.get('/api/health', (req, res) => {
   res.json({ ok: true });
 });
 
+app.get('/api/db/status', (req, res) => {
+  try {
+    // Test database connection
+    const result = db.db.prepare('SELECT 1 as test').get();
+    res.json({ 
+      ok: true, 
+      message: 'Database connected successfully',
+      test: result.test 
+    });
+  } catch (error) {
+    res.status(500).json({ 
+      ok: false, 
+      error: 'Database connection failed',
+      details: error.message 
+    });
+  }
+});
+
 // Error handling middleware
 app.use((err, req, res, next) => {
   console.error(err.stack);
@@ -35,4 +56,5 @@ app.use('*', (req, res) => {
 app.listen(PORT, () => {
   console.log(`🚀 Server is running on http://localhost:${PORT}`);
   console.log(`📊 Health check: http://localhost:${PORT}/api/health`);
+  console.log(`🗄️  Database status: http://localhost:${PORT}/api/db/status`);
 });
