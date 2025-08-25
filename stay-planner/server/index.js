@@ -1,19 +1,26 @@
 const express = require('express');
 const cors = require('cors');
 const morgan = require('morgan');
+const cookieParser = require('cookie-parser');
 require('dotenv').config();
 
-// Import database
+// Import database and routes
 const db = require('./db');
+const authRoutes = require('./routes/auth');
+const { requireAuth } = require('./middleware/auth');
 
 const app = express();
 const PORT = process.env.PORT || 4000;
 
 // Middleware
-app.use(cors());
+app.use(cors({
+  origin: process.env.NODE_ENV === 'production' ? false : 'http://localhost:5173',
+  credentials: true
+}));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(morgan('combined'));
+app.use(cookieParser());
 
 // Routes
 app.get('/', (req, res) => {
@@ -42,6 +49,17 @@ app.get('/api/db/status', (req, res) => {
   }
 });
 
+// Auth routes
+app.use('/api/auth', authRoutes);
+
+// Protected route example
+app.get('/api/protected', requireAuth, (req, res) => {
+  res.json({ 
+    message: 'This is a protected route',
+    user: req.user 
+  });
+});
+
 // Error handling middleware
 app.use((err, req, res, next) => {
   console.error(err.stack);
@@ -57,4 +75,5 @@ app.listen(PORT, () => {
   console.log(`🚀 Server is running on http://localhost:${PORT}`);
   console.log(`📊 Health check: http://localhost:${PORT}/api/health`);
   console.log(`🗄️  Database status: http://localhost:${PORT}/api/db/status`);
+  console.log(`🔐 Auth endpoints: http://localhost:${PORT}/api/auth`);
 });
