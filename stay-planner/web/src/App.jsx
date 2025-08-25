@@ -1,62 +1,41 @@
-import React, { useState, useEffect } from 'react'
-import './App.css'
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import './App.css';
+
+// Import components (we'll create these next)
+import Login from './components/Login';
+import Register from './components/Register';
+import AppLayout from './components/AppLayout';
+import ProtectedRoute from './components/ProtectedRoute';
 
 function App() {
-  const [apiStatus, setApiStatus] = useState('Loading...')
-  const [serverTime, setServerTime] = useState('')
-
-  useEffect(() => {
-    // Test API connection
-    fetch('http://localhost:4000/api/health')
-      .then(response => response.json())
-      .then(data => {
-        setApiStatus('Connected')
-        setServerTime(new Date().toLocaleString())
-      })
-      .catch(error => {
-        setApiStatus('Disconnected')
-        console.error('API Error:', error)
-      })
-  }, [])
-
   return (
-    <div className="App">
-      <header className="App-header">
-        <h1>🏠 Stay Planner</h1>
-        <p>Welcome to your stay planning application!</p>
-        
-        <div className="status-section">
-          <h3>System Status</h3>
-          <div className="status-item">
-            <span>Frontend:</span>
-            <span className="status-connected">Running</span>
-          </div>
-          <div className="status-item">
-            <span>Backend API:</span>
-            <span className={apiStatus === 'Connected' ? 'status-connected' : 'status-disconnected'}>
-              {apiStatus}
-            </span>
-          </div>
-          {serverTime && (
-            <div className="status-item">
-              <span>Server Time:</span>
-              <span>{serverTime}</span>
-            </div>
-          )}
-        </div>
-
-        <div className="features">
-          <h3>Features Coming Soon</h3>
-          <ul>
-            <li>✈️ Trip planning and management</li>
-            <li>🏨 Accommodation booking</li>
-            <li>🗺️ Itinerary creation</li>
-            <li>📱 Mobile-friendly interface</li>
-          </ul>
-        </div>
-      </header>
-    </div>
-  )
+    <Router>
+      <div className="App">
+        <Routes>
+          {/* Public routes */}
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
+          
+          {/* Protected app route */}
+          <Route 
+            path="/app/*" 
+            element={
+              <ProtectedRoute>
+                <AppLayout />
+              </ProtectedRoute>
+            } 
+          />
+          
+          {/* Redirect root to app */}
+          <Route path="/" element={<Navigate to="/app" replace />} />
+          
+          {/* Catch all - redirect to app */}
+          <Route path="*" element={<Navigate to="/app" replace />} />
+        </Routes>
+      </div>
+    </Router>
+  );
 }
 
-export default App
+export default App;
