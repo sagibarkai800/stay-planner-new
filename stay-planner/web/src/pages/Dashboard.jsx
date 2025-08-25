@@ -39,103 +39,93 @@ const Dashboard = () => {
   }
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
-        <p className="text-gray-600">Welcome to your travel planning dashboard</p>
+    <div className="space-y-8">
+      {/* Welcome Header */}
+      <div className="clay-card p-8 text-center">
+        <div className="clay-icon w-24 h-24 mx-auto mb-6 flex items-center justify-center">
+          <span className="text-4xl">🏠</span>
+        </div>
+        <h1 className="text-4xl font-bold text-gray-800 mb-3">Welcome Back!</h1>
+        <p className="text-xl text-gray-600">Here's what's happening with your travel plans today</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      {/* Stats Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
         {/* Schengen Status Card */}
-        <div className="bg-white overflow-hidden shadow rounded-lg">
-          <div className="p-5">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <div className="w-8 h-8 bg-blue-500 rounded-md flex items-center justify-center">
-                  <span className="text-white text-sm font-medium">🇪🇺</span>
-                </div>
-              </div>
-              <div className="ml-5 w-0 flex-1">
-                <dl>
-                  <dt className="text-sm font-medium text-gray-500 truncate">
-                    Schengen Status
-                  </dt>
-                  <dd className="text-lg font-medium text-gray-900">
-                    {summary?.schengen?.remaining || 0} days remaining
-                  </dd>
-                </dl>
-              </div>
-            </div>
+        <div className="clay-status-card p-8 text-center hover:transform hover:scale-105 transition-transform duration-300">
+          <div className="clay-icon w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+            <span className="text-white text-2xl">🇪🇺</span>
           </div>
+          <h3 className="text-lg font-semibold text-gray-700 mb-2">Schengen Status</h3>
+          <p className="text-3xl font-bold text-gray-800 mb-1">
+            {summary?.schengen?.remaining || 0}
+          </p>
+          <p className="text-sm text-gray-600">days remaining</p>
         </div>
 
         {/* Total Trips Card */}
-        <div className="bg-white overflow-hidden shadow rounded-lg">
-          <div className="p-5">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <div className="w-8 h-8 bg-green-500 rounded-md flex items-center justify-center">
-                  <span className="text-white text-sm font-medium">✈️</span>
-                </div>
-              </div>
-              <div className="ml-5 w-0 flex-1">
-                <dl>
-                  <dt className="text-sm font-medium text-gray-500 truncate">
-                    Total Trips
-                  </dt>
-                  <dd className="text-lg font-medium text-gray-900">
-                    {summary?.trips?.length || 0}
-                  </dd>
-                </dl>
-              </div>
-            </div>
+        <div className="clay-status-card p-8 text-center hover:transform hover:scale-105 transition-transform duration-300">
+          <div className="clay-icon w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+            <span className="text-white text-2xl">✈️</span>
           </div>
+          <h3 className="text-lg font-semibold text-gray-700 mb-2">Total Trips</h3>
+          <p className="text-3xl font-bold text-gray-800 mb-1">
+            {summary?.trips?.length || 0}
+          </p>
+          <p className="text-sm text-gray-600">trips planned</p>
         </div>
 
         {/* Documents Card */}
-        <div className="bg-white overflow-hidden shadow rounded-lg">
-          <div className="p-5">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <div className="w-8 h-8 bg-purple-500 rounded-md flex items-center justify-center">
-                  <span className="text-white text-sm font-medium">📄</span>
-                </div>
-              </div>
-              <div className="ml-5 w-0 flex-1">
-                <dl>
-                  <dt className="text-sm font-medium text-gray-500 truncate">
-                    Documents
-                  </dt>
-                  <dd className="text-lg font-medium text-gray-900">
-                    {summary?.documents?.length || 0}
-                  </dd>
-                </dl>
-              </div>
-            </div>
+        <div className="clay-status-card p-8 text-center hover:transform hover:scale-105 transition-transform duration-300">
+          <div className="clay-icon w-16 h-16 mx-auto mb-4 flex items-center justify-center">
+            <span className="text-white text-2xl">📄</span>
           </div>
+          <h3 className="text-lg font-semibold text-gray-700 mb-2">Documents</h3>
+          <p className="text-3xl font-bold text-gray-800 mb-1">
+            {summary?.documents?.length || 0}
+          </p>
+          <p className="text-sm text-gray-600">files uploaded</p>
         </div>
       </div>
 
       {/* Quick Actions */}
-      <div className="bg-white shadow rounded-lg">
-        <div className="px-4 py-5 sm:p-6">
-          <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4">
-            Quick Actions
-          </h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <button className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700">
-              ✈️ Add Trip
-            </button>
-            <button className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700">
-              📄 Upload Document
-            </button>
-            <button className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-purple-600 hover:bg-purple-700">
-              🧮 Calculate Status
-            </button>
-            <button className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700">
-              📊 View Reports
-            </button>
+      <div className="clay-card p-8">
+        <div className="text-center mb-8">
+          <h3 className="text-2xl font-bold text-gray-800 mb-2">Quick Actions</h3>
+          <p className="text-gray-600">Get started with your travel planning</p>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <button className="clay-button py-4 px-6 text-gray-800 font-medium text-sm flex flex-col items-center space-y-2 hover:transform hover:scale-105 transition-all duration-300">
+            <span className="text-2xl">✈️</span>
+            <span>Add Trip</span>
+          </button>
+          <button className="clay-button py-4 px-6 text-gray-800 font-medium text-sm flex flex-col items-center space-y-2 hover:transform hover:scale-105 transition-all duration-300">
+            <span className="text-2xl">📄</span>
+            <span>Upload Document</span>
+          </button>
+          <button className="clay-button py-4 px-6 text-gray-800 font-medium text-sm flex flex-col items-center space-y-2 hover:transform hover:scale-105 transition-all duration-300">
+            <span className="text-2xl">🧮</span>
+            <span>Calculate Status</span>
+          </button>
+          <button className="clay-button py-4 px-6 text-gray-800 font-medium text-sm flex flex-col items-center space-y-2 hover:transform hover:scale-105 transition-all duration-300">
+            <span className="text-2xl">📊</span>
+            <span>View Reports</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Recent Activity Placeholder */}
+      <div className="clay-card p-8">
+        <div className="text-center mb-6">
+          <h3 className="text-2xl font-bold text-gray-800 mb-2">Recent Activity</h3>
+          <p className="text-gray-600">Your latest travel updates and notifications</p>
+        </div>
+        <div className="text-center py-12">
+          <div className="clay-icon w-20 h-20 mx-auto mb-4 flex items-center justify-center">
+            <span className="text-3xl">📱</span>
           </div>
+          <p className="text-gray-500 text-lg">No recent activity yet</p>
+          <p className="text-gray-400 text-sm">Start planning your next trip to see updates here!</p>
         </div>
       </div>
     </div>

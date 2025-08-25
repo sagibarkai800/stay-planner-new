@@ -14,11 +14,167 @@ body {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(135deg, #E8F4FD 0%, #F0E6FF 50%, #E6F7F0 100%);
   min-height: 100vh;
 }
 
 code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
+}
+
+/* Claymorphism Design System */
+.clay-card {
+  background: rgba(255, 255, 255, 0.7);
+  border-radius: 20px;
+  box-shadow: 
+    8px 8px 16px rgba(174, 197, 235, 0.3),
+    -8px -8px 16px rgba(255, 255, 255, 0.8),
+    inset 2px 2px 4px rgba(255, 255, 255, 0.9),
+    inset -2px -2px 4px rgba(174, 197, 235, 0.2);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.clay-button {
+  background: linear-gradient(135deg, #A8E6CF 0%, #9DD8F3 100%);
+  border-radius: 18px;
+  box-shadow: 
+    6px 6px 12px rgba(174, 197, 235, 0.4),
+    -6px -6px 12px rgba(255, 255, 255, 0.8),
+    inset 2px 2px 4px rgba(255, 255, 255, 0.6),
+    inset -2px -2px 4px rgba(174, 197, 235, 0.3);
+  border: none;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transform: translateY(0);
+}
+
+.clay-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 
+    8px 8px 20px rgba(174, 197, 235, 0.5),
+    -8px -8px 20px rgba(255, 255, 255, 0.9),
+    inset 2px 2px 4px rgba(255, 255, 255, 0.6),
+    inset -2px -2px 4px rgba(174, 197, 235, 0.3);
+}
+
+.clay-button:active {
+  transform: translateY(1px);
+  box-shadow: 
+    4px 4px 8px rgba(174, 197, 235, 0.4),
+    -4px -4px 8px rgba(255, 255, 255, 0.8),
+    inset 3px 3px 6px rgba(174, 197, 235, 0.4),
+    inset -3px -3px 6px rgba(255, 255, 255, 0.6);
+}
+
+.clay-input {
+  background: rgba(255, 255, 255, 0.8);
+  border-radius: 16px;
+  box-shadow: 
+    inset 4px 4px 8px rgba(174, 197, 235, 0.2),
+    inset -4px -4px 8px rgba(255, 255, 255, 0.9);
+  border: 2px solid rgba(255, 255, 255, 0.5);
+  transition: all 0.3s ease;
+}
+
+.clay-input:focus {
+  outline: none;
+  border-color: rgba(168, 230, 207, 0.6);
+  box-shadow: 
+    inset 4px 4px 8px rgba(174, 197, 235, 0.2),
+    inset -4px -4px 8px rgba(255, 255, 255, 0.9),
+    0 0 0 3px rgba(168, 230, 207, 0.2);
+}
+
+.clay-nav {
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(15px);
+  box-shadow: 
+    0 8px 32px rgba(174, 197, 235, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.clay-status-card {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.9) 0%, rgba(248, 250, 252, 0.8) 100%);
+  border-radius: 20px;
+  box-shadow: 
+    8px 8px 20px rgba(174, 197, 235, 0.25),
+    -8px -8px 20px rgba(255, 255, 255, 0.8),
+    inset 2px 2px 4px rgba(255, 255, 255, 0.9),
+    inset -2px -2px 4px rgba(174, 197, 235, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  backdrop-filter: blur(10px);
+}
+
+.clay-icon {
+  background: linear-gradient(135deg, #A8E6CF 0%, #9DD8F3 100%);
+  border-radius: 16px;
+  box-shadow: 
+    4px 4px 12px rgba(174, 197, 235, 0.4),
+    -4px -4px 12px rgba(255, 255, 255, 0.8),
+    inset 1px 1px 3px rgba(255, 255, 255, 0.7),
+    inset -1px -1px 3px rgba(174, 197, 235, 0.3);
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(135deg, #A8E6CF 0%, #9DD8F3 100%);
+  border-radius: 10px;
+  box-shadow: inset 2px 2px 4px rgba(255, 255, 255, 0.6);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(135deg, #9DD8F3 0%, #A8E6CF 100%);
+}
+
+/* Enhanced animations and effects */
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+}
+
+@keyframes pulse-soft {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.8; }
+}
+
+.clay-card:hover {
+  transform: translateY(-2px);
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.clay-status-card:hover {
+  transform: translateY(-4px);
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Loading animation enhancement */
+.animate-spin {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Text selection styling */
+::selection {
+  background: rgba(168, 230, 207, 0.3);
+  color: #1f2937;
+}
+
+::-moz-selection {
+  background: rgba(168, 230, 207, 0.3);
+  color: #1f2937;
 }
