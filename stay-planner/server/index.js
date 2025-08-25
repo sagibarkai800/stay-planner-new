@@ -11,6 +11,7 @@ const rulesRoutes = require('./routes/rules');
 const tripsRoutes = require('./routes/trips');
 const calcsRoutes = require('./routes/calcs');
 const { requireAuth } = require('./middleware/auth');
+const { initSchengenAlerts } = require('./cron/schengenAlerts');
 
 const app = express();
 const PORT = process.env.PORT || 4000;
@@ -91,4 +92,7 @@ app.listen(PORT, () => {
   console.log(`📋 Rules endpoints: http://localhost:4000/api/rules`);
   console.log(`✈️  Trips endpoints: http://localhost:4000/api/trips`);
   console.log(`🧮 Calculations endpoints: http://localhost:4000/api/calcs`);
+  
+  // Initialize cron jobs
+  initSchengenAlerts();
 });

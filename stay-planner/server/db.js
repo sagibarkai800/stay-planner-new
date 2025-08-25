@@ -88,6 +88,16 @@ function findUserById(id) {
   }
 }
 
+function listAllUsers() {
+  try {
+    const stmt = db.prepare('SELECT id, email, created_at FROM users ORDER BY created_at DESC');
+    return stmt.all();
+  } catch (error) {
+    console.error('Error listing all users:', error);
+    return [];
+  }
+}
+
 // Trip helper functions
 function createTrip(userId, country, startDate, endDate) {
   try {
@@ -212,6 +222,7 @@ module.exports = {
   createUser,
   findUserByEmail,
   findUserById,
+  listAllUsers,
   // Trip functions
   createTrip,
   listTripsByUser,

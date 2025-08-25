@@ -69,7 +69,7 @@ function daysInRange(trips, start, end, country = null) {
 }
 
 /**
- * Calculate Schengen remaining days using rolling 180-day window
+ * Calculate Schengen remaining days using rolling 180-day window (but 90-day limit)
  * @param {Array} trips - Array of trip objects with country, start_date, end_date
  * @param {string} referenceDate - Reference date (YYYY-MM-DD) for calculation
  * @returns {Object} {used, remaining, windowStart, windowEnd}
@@ -103,7 +103,7 @@ function schengenRemainingDays(trips, referenceDate) {
     }
   }
   
-  const remaining = Math.max(0, 180 - usedDays);
+  const remaining = Math.max(0, 90 - usedDays);
   
   return {
     used: usedDays,
