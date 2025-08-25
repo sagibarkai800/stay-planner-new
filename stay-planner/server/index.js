@@ -7,6 +7,7 @@ require('dotenv').config();
 // Import database and routes
 const db = require('./db');
 const authRoutes = require('./routes/auth');
+const rulesRoutes = require('./routes/rules');
 const { requireAuth } = require('./middleware/auth');
 
 const app = express();
@@ -52,6 +53,9 @@ app.get('/api/db/status', (req, res) => {
 // Auth routes
 app.use('/api/auth', authRoutes);
 
+// Rules routes (require authentication)
+app.use('/api/rules', rulesRoutes);
+
 // Protected route example
 app.get('/api/protected', requireAuth, (req, res) => {
   res.json({ 
@@ -73,7 +77,8 @@ app.use('*', (req, res) => {
 
 app.listen(PORT, () => {
   console.log(`🚀 Server is running on http://localhost:${PORT}`);
-  console.log(`📊 Health check: http://localhost:${PORT}/api/health`);
-  console.log(`🗄️  Database status: http://localhost:${PORT}/api/db/status`);
-  console.log(`🔐 Auth endpoints: http://localhost:${PORT}/api/auth`);
+  console.log(`📊 Health check: http://localhost:4000/api/health`);
+  console.log(`🗄️  Database status: http://localhost:4000/api/db/status`);
+  console.log(`🔐 Auth endpoints: http://localhost:4000/api/auth`);
+  console.log(`📋 Rules endpoints: http://localhost:4000/api/rules`);
 });
