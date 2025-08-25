@@ -8,6 +8,8 @@ require('dotenv').config();
 const db = require('./db');
 const authRoutes = require('./routes/auth');
 const rulesRoutes = require('./routes/rules');
+const tripsRoutes = require('./routes/trips');
+const calcsRoutes = require('./routes/calcs');
 const { requireAuth } = require('./middleware/auth');
 
 const app = express();
@@ -56,6 +58,12 @@ app.use('/api/auth', authRoutes);
 // Rules routes (require authentication)
 app.use('/api/rules', rulesRoutes);
 
+// Trips routes (require authentication)
+app.use('/api/trips', tripsRoutes);
+
+// Calculations routes (require authentication)
+app.use('/api/calcs', calcsRoutes);
+
 // Protected route example
 app.get('/api/protected', requireAuth, (req, res) => {
   res.json({ 
@@ -81,4 +89,6 @@ app.listen(PORT, () => {
   console.log(`🗄️  Database status: http://localhost:4000/api/db/status`);
   console.log(`🔐 Auth endpoints: http://localhost:4000/api/auth`);
   console.log(`📋 Rules endpoints: http://localhost:4000/api/rules`);
+  console.log(`✈️  Trips endpoints: http://localhost:4000/api/trips`);
+  console.log(`🧮 Calculations endpoints: http://localhost:4000/api/calcs`);
 });
