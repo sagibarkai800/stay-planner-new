@@ -7,11 +7,11 @@ function App() {
 
   useEffect(() => {
     // Test API connection
-    fetch('http://localhost:3000/api/health')
+    fetch('http://localhost:4000/api/health')
       .then(response => response.json())
       .then(data => {
         setApiStatus('Connected')
-        setServerTime(new Date(data.timestamp).toLocaleString())
+        setServerTime(new Date().toLocaleString())
       })
       .catch(error => {
         setApiStatus('Disconnected')

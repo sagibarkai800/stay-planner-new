@@ -9,6 +9,7 @@ A full-stack web application for planning and managing stays, built with modern 
 - **Express.js** - Web application framework
 - **CORS** - Cross-origin resource sharing
 - **dotenv** - Environment variable management
+- **Morgan** - HTTP request logger middleware
 
 ### Frontend (Web)
 - **React 18** - User interface library
@@ -82,6 +83,9 @@ npm run dev:web
 ### Server
 - `npm run dev` - Start server with nodemon (auto-restart on changes)
 - `npm start` - Start server in production mode
+- `npm run lint` - Run ESLint to check code quality
+- `npm run lint:fix` - Fix ESLint issues automatically
+- `npm run format` - Format code with Prettier
 
 ### Web
 - `npm run dev` - Start Vite development server
@@ -90,7 +94,7 @@ npm run dev:web
 
 ## Ports
 
-- **Backend Server**: http://localhost:3000
+- **Backend Server**: http://localhost:4000
 - **Frontend Web**: http://localhost:5173 (Vite default)
 
 ## Environment Variables
@@ -98,9 +102,17 @@ npm run dev:web
 Create a `.env` file in the `server/` directory for backend configuration:
 
 ```env
-PORT=3000
+PORT=4000
 NODE_ENV=development
 ```
+
+## Code Quality
+
+The server includes ESLint and Prettier for code quality:
+
+- **ESLint**: JavaScript linting with recommended rules
+- **Prettier**: Code formatting with consistent style
+- **Integration**: ESLint and Prettier work together without conflicts
 
 ## Development Workflow
 
@@ -108,7 +120,7 @@ NODE_ENV=development
 2. Run `npm run install-all` to install all dependencies
 3. Run `npm run dev` to start both applications
 4. Open http://localhost:5173 in your browser
-5. The backend API will be available at http://localhost:3000
+5. The backend API will be available at http://localhost:4000
 
 ## Building for Production
 
@@ -123,8 +135,9 @@ npm start
 ## Contributing
 
 1. Make changes in the respective workspace (`server/` or `web/`)
-2. Test your changes
-3. Commit and push your changes
+2. Run `npm run lint` and `npm run format` in the server directory
+3. Test your changes
+4. Commit and push your changes
 
 ## License
 
