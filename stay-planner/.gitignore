@@ -27,6 +27,10 @@ out/
 data/
 server/data/
 
+# Uploaded files
+uploads/
+server/uploads/
+
 # Runtime data
 pids
 *.pid
