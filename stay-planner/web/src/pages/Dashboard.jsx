@@ -1,134 +1,242 @@
-import React, { useState, useEffect } from 'react';
-import { api } from '../api/client';
+import React from 'react';
+import { Link } from 'react-router-dom';
+import {
+  Card,
+  Title,
+  Subtitle,
+  Text,
+  Button,
+  Grid2,
+  Grid3,
+  FlexCenter,
+  FlexBetween,
+  IconContainer,
+  Icon,
+  Spacer,
+  SuccessMessage,
+  InfoMessage
+} from '../styles/common';
+import styled from '@emotion/styled';
+
+// Dashboard-specific styled components
+const DashboardContainer = styled.div`
+  min-height: 100vh;
+  background: linear-gradient(135deg, #E8F4FD 0%, #F0E6FF 50%, #E6F7F0 100%);
+  padding: 2rem;
+`;
+
+const HeaderSection = styled.div`
+  text-align: center;
+  margin-bottom: 3rem;
+`;
+
+const WelcomeTitle = styled.h1`
+  font-size: 3rem;
+  font-weight: bold;
+  background: linear-gradient(135deg, #3b82f6, #8b5cf6, #10b981);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-bottom: 1rem;
+`;
+
+const WelcomeSubtitle = styled.p`
+  font-size: 1.25rem;
+  color: #6b7280;
+  max-width: 600px;
+  margin: 0 auto;
+`;
+
+const StatsGrid = styled(Grid3)`
+  margin-bottom: 3rem;
+`;
+
+const StatCard = styled(Card)`
+  text-align: center;
+  padding: 2rem;
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+  border: 2px solid rgba(255, 255, 255, 0.8);
+  box-shadow: 
+    0 20px 25px -5px rgba(0, 0, 0, 0.1),
+    0 10px 10px -5px rgba(0, 0, 0, 0.04),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8);
+  transition: all 0.3s ease;
+  
+  &:hover {
+    transform: translateY(-4px);
+    box-shadow: 
+      0 25px 50px -12px rgba(0, 0, 0, 0.15),
+      0 20px 20px -10px rgba(0, 0, 0, 0.08),
+      inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  }
+`;
+
+const StatIcon = styled(IconContainer)`
+  width: 4rem;
+  height: 4rem;
+  margin: 0 auto 1rem;
+  background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+  border-radius: 1rem;
+`;
+
+const StatValue = styled.div`
+  font-size: 2.5rem;
+  font-weight: bold;
+  color: #1f2937;
+  margin-bottom: 0.5rem;
+`;
+
+const StatLabel = styled.div`
+  font-size: 1rem;
+  color: #6b7280;
+  font-weight: 500;
+`;
+
+const SectionTitle = styled.h2`
+  font-size: 2rem;
+  font-weight: bold;
+  color: #1f2937;
+  margin-bottom: 0.5rem;
+  text-align: center;
+`;
+
+const SectionSubtitle = styled.p`
+  font-size: 1.125rem;
+  color: #6b7280;
+  text-align: center;
+  margin-bottom: 2rem;
+`;
+
+const QuickActionsGrid = styled(Grid2)`
+  margin-bottom: 3rem;
+`;
+
+const ActionButton = styled(Button)`
+  padding: 2rem;
+  font-size: 1.125rem;
+  font-weight: 600;
+  background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+  border: none;
+  border-radius: 1.5rem;
+  box-shadow: 
+    0 20px 25px -5px rgba(59, 130, 246, 0.3),
+    0 10px 10px -5px rgba(59, 130, 246, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  transition: all 0.3s ease;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  
+  &:hover {
+    transform: translateY(-4px);
+    box-shadow: 
+      0 25px 50px -12px rgba(59, 130, 246, 0.4),
+      0 20px 20px -10px rgba(59, 130, 246, 0.3),
+      inset 0 1px 0 rgba(255, 255, 255, 0.4);
+  }
+`;
+
+const ActionIcon = styled.div`
+  font-size: 2rem;
+  margin-bottom: 0.5rem;
+`;
+
+const RecentActivityCard = styled(Card)`
+  text-align: center;
+  padding: 3rem;
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+  border: 2px solid rgba(255, 255, 255, 0.8);
+  box-shadow: 
+    0 20px 25px -5px rgba(0, 0, 0, 0.1),
+    0 10px 10px -5px rgba(0, 0, 0, 0.04),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8);
+`;
+
+const ActivityIcon = styled.div`
+  font-size: 3rem;
+  margin-bottom: 1rem;
+  opacity: 0.6;
+`;
 
 const Dashboard = () => {
-  const [summary, setSummary] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState('');
-
-  useEffect(() => {
-    const fetchSummary = async () => {
-      try {
-        const response = await api.calculations.summary();
-        setSummary(response.data);
-      } catch (error) {
-        setError('Failed to load dashboard data');
-        console.error('Dashboard error:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchSummary();
-  }, []);
-
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md">
-        {error}
-      </div>
-    );
-  }
-
   return (
-    <div className="space-y-8">
-      {/* Welcome Header */}
-      <div className="clay-card p-8 text-center">
-        <div className="clay-icon w-24 h-24 mx-auto mb-6 flex items-center justify-center">
-          <span className="text-4xl">🏠</span>
-        </div>
-        <h1 className="text-4xl font-bold text-gray-800 mb-3">Welcome Back!</h1>
-        <p className="text-xl text-gray-600">Here's what's happening with your travel plans today</p>
+    <DashboardContainer>
+      <HeaderSection>
+        <WelcomeTitle>Welcome Back! 👋</WelcomeTitle>
+        <WelcomeSubtitle>
+          Here's what's happening with your travel plans today
+        </WelcomeSubtitle>
+      </HeaderSection>
+
+      <StatsGrid>
+        <StatCard>
+          <StatIcon>
+            <Icon>🏳️</Icon>
+          </StatIcon>
+          <StatValue>0</StatValue>
+          <StatLabel>days remaining</StatLabel>
+        </StatCard>
+
+        <StatCard>
+          <StatIcon>
+            <Icon>✈️</Icon>
+          </StatIcon>
+          <StatValue>0</StatValue>
+          <StatLabel>trips planned</StatLabel>
+        </StatCard>
+
+        <StatCard>
+          <StatIcon>
+            <Icon>📄</Icon>
+          </StatIcon>
+          <StatValue>0</StatValue>
+          <StatLabel>files uploaded</StatLabel>
+        </StatCard>
+      </StatsGrid>
+
+      <div>
+        <SectionTitle>Quick Actions</SectionTitle>
+        <SectionSubtitle>Get started with your travel planning</SectionSubtitle>
+        
+        <QuickActionsGrid>
+          <ActionButton as={Link} to="/trips">
+            <ActionIcon>✈️</ActionIcon>
+            Add Trip
+          </ActionButton>
+          
+          <ActionButton as={Link} to="/documents">
+            <ActionIcon>📤</ActionIcon>
+            Upload Document
+          </ActionButton>
+          
+          <ActionButton as={Link} to="/trips">
+            <ActionIcon>🧮</ActionIcon>
+            Calculate Status
+          </ActionButton>
+          
+          <ActionButton as={Link} to="/trips">
+            <ActionIcon>📊</ActionIcon>
+            View Reports
+          </ActionButton>
+        </QuickActionsGrid>
       </div>
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-        {/* Schengen Status Card */}
-        <div className="clay-status-card p-8 text-center hover:transform hover:scale-105 transition-transform duration-300">
-          <div className="clay-icon w-16 h-16 mx-auto mb-4 flex items-center justify-center">
-            <span className="text-white text-2xl">🇪🇺</span>
-          </div>
-          <h3 className="text-lg font-semibold text-gray-700 mb-2">Schengen Status</h3>
-          <p className="text-3xl font-bold text-gray-800 mb-1">
-            {summary?.schengen?.remaining || 0}
-          </p>
-          <p className="text-sm text-gray-600">days remaining</p>
-        </div>
-
-        {/* Total Trips Card */}
-        <div className="clay-status-card p-8 text-center hover:transform hover:scale-105 transition-transform duration-300">
-          <div className="clay-icon w-16 h-16 mx-auto mb-4 flex items-center justify-center">
-            <span className="text-white text-2xl">✈️</span>
-          </div>
-          <h3 className="text-lg font-semibold text-gray-700 mb-2">Total Trips</h3>
-          <p className="text-3xl font-bold text-gray-800 mb-1">
-            {summary?.trips?.length || 0}
-          </p>
-          <p className="text-sm text-gray-600">trips planned</p>
-        </div>
-
-        {/* Documents Card */}
-        <div className="clay-status-card p-8 text-center hover:transform hover:scale-105 transition-transform duration-300">
-          <div className="clay-icon w-16 h-16 mx-auto mb-4 flex items-center justify-center">
-            <span className="text-white text-2xl">📄</span>
-          </div>
-          <h3 className="text-lg font-semibold text-gray-700 mb-2">Documents</h3>
-          <p className="text-3xl font-bold text-gray-800 mb-1">
-            {summary?.documents?.length || 0}
-          </p>
-          <p className="text-sm text-gray-600">files uploaded</p>
-        </div>
+      <div>
+        <SectionTitle>Recent Activity</SectionTitle>
+        <SectionSubtitle>Your latest travel updates and notifications</SectionSubtitle>
+        
+        <RecentActivityCard>
+          <ActivityIcon>📱</ActivityIcon>
+          <Text style={{ fontSize: '1.125rem', marginBottom: '0.5rem' }}>
+            No recent activity yet
+          </Text>
+          <Text style={{ color: '#6b7280' }}>
+            Start planning your next trip to see updates here!
+          </Text>
+        </RecentActivityCard>
       </div>
-
-      {/* Quick Actions */}
-      <div className="clay-card p-8">
-        <div className="text-center mb-8">
-          <h3 className="text-2xl font-bold text-gray-800 mb-2">Quick Actions</h3>
-          <p className="text-gray-600">Get started with your travel planning</p>
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          <button className="clay-button py-4 px-6 text-gray-800 font-medium text-sm flex flex-col items-center space-y-2 hover:transform hover:scale-105 transition-all duration-300">
-            <span className="text-2xl">✈️</span>
-            <span>Add Trip</span>
-          </button>
-          <button className="clay-button py-4 px-6 text-gray-800 font-medium text-sm flex flex-col items-center space-y-2 hover:transform hover:scale-105 transition-all duration-300">
-            <span className="text-2xl">📄</span>
-            <span>Upload Document</span>
-          </button>
-          <button className="clay-button py-4 px-6 text-gray-800 font-medium text-sm flex flex-col items-center space-y-2 hover:transform hover:scale-105 transition-all duration-300">
-            <span className="text-2xl">🧮</span>
-            <span>Calculate Status</span>
-          </button>
-          <button className="clay-button py-4 px-6 text-gray-800 font-medium text-sm flex flex-col items-center space-y-2 hover:transform hover:scale-105 transition-all duration-300">
-            <span className="text-2xl">📊</span>
-            <span>View Reports</span>
-          </button>
-        </div>
-      </div>
-
-      {/* Recent Activity Placeholder */}
-      <div className="clay-card p-8">
-        <div className="text-center mb-6">
-          <h3 className="text-2xl font-bold text-gray-800 mb-2">Recent Activity</h3>
-          <p className="text-gray-600">Your latest travel updates and notifications</p>
-        </div>
-        <div className="text-center py-12">
-          <div className="clay-icon w-20 h-20 mx-auto mb-4 flex items-center justify-center">
-            <span className="text-3xl">📱</span>
-          </div>
-          <p className="text-gray-500 text-lg">No recent activity yet</p>
-          <p className="text-gray-400 text-sm">Start planning your next trip to see updates here!</p>
-        </div>
-      </div>
-    </div>
+    </DashboardContainer>
   );
 };
 

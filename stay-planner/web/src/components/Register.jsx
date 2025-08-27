@@ -1,6 +1,22 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { api } from '../api/client';
+import {
+  PageContainer,
+  MediumCard,
+  MediumIconContainer,
+  MediumIcon,
+  MediumTitle,
+  MediumSubtitle,
+  Form,
+  FormGroup,
+  MediumLabel,
+  MediumInput,
+  MediumButton,
+  ErrorMessage,
+  Text,
+  StyledLink
+} from '../styles/common';
 
 const Register = () => {
   const [formData, setFormData] = useState({
@@ -24,25 +40,14 @@ const Register = () => {
     setIsLoading(true);
     setError('');
 
-    // Validate passwords match
     if (formData.password !== formData.confirmPassword) {
-      setError('Passwords do not match');
-      setIsLoading(false);
-      return;
-    }
-
-    // Validate password length
-    if (formData.password.length < 6) {
-      setError('Password must be at least 6 characters long');
+      setError('Passwords do not match.');
       setIsLoading(false);
       return;
     }
 
     try {
-      await api.auth.register({
-        email: formData.email,
-        password: formData.password
-      });
+      await api.auth.register(formData);
       navigate('/login');
     } catch (error) {
       setError(error.response?.data?.error || 'Registration failed. Please try again.');
@@ -52,103 +57,77 @@ const Register = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
-        <div className="clay-card p-8 text-center">
-          <div className="mb-8">
-            <div className="clay-icon w-20 h-20 mx-auto mb-4 flex items-center justify-center">
-              <span className="text-3xl">🏠</span>
-            </div>
-            <h2 className="text-3xl font-bold text-gray-800 mb-2">
-              Stay Planner
-            </h2>
-            <p className="text-gray-600">
-              Create your account
-            </p>
-          </div>
+    <PageContainer>
+      <MediumCard>
+        <MediumIconContainer style={{ margin: '0 auto 2rem' }}>
+          <MediumIcon>🏠</MediumIcon>
+        </MediumIconContainer>
+        
+        <MediumTitle style={{ textAlign: 'center' }}>Stay Planner</MediumTitle>
+        <MediumSubtitle style={{ textAlign: 'center' }}>Create your account</MediumSubtitle>
+        
+        <Form onSubmit={handleSubmit}>
+          {error && (
+            <ErrorMessage>
+              <Text style={{ color: '#b91c1c', fontSize: '1rem' }}>{error}</Text>
+            </ErrorMessage>
+          )}
           
-          <form className="space-y-6" onSubmit={handleSubmit}>
-            {error && (
-              <div className="clay-card p-4 bg-red-50 border-l-4 border-red-400">
-                <p className="text-red-700 text-sm">{error}</p>
-              </div>
-            )}
-            
-            <div className="space-y-4">
-              <div>
-                <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
-                  Email address
-                </label>
-                <input
-                  id="email"
-                  name="email"
-                  type="email"
-                  autoComplete="email"
-                  required
-                  value={formData.email}
-                  onChange={handleChange}
-                  className="clay-input w-full px-4 py-3 text-gray-900 placeholder-gray-500 text-sm"
-                  placeholder="Enter your email"
-                />
-              </div>
-              
-              <div>
-                <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
-                  Password
-                </label>
-                <input
-                  id="password"
-                  name="password"
-                  type="password"
-                  autoComplete="new-password"
-                  required
-                  value={formData.password}
-                  onChange={handleChange}
-                  className="clay-input w-full px-4 py-3 text-gray-900 placeholder-gray-500 text-sm"
-                  placeholder="Enter your password"
-                />
-              </div>
+          <FormGroup>
+            <MediumLabel htmlFor="email">Email address</MediumLabel>
+            <MediumInput
+              id="email"
+              name="email"
+              type="email"
+              autoComplete="email"
+              required
+              value={formData.email}
+              onChange={handleChange}
+              placeholder="Enter your email"
+            />
+          </FormGroup>
+          
+          <FormGroup>
+            <MediumLabel htmlFor="password">Password</MediumLabel>
+            <MediumInput
+              id="password"
+              name="password"
+              type="password"
+              autoComplete="new-password"
+              required
+              value={formData.password}
+              onChange={handleChange}
+              placeholder="Enter your password"
+            />
+          </FormGroup>
 
-              <div>
-                <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-2">
-                  Confirm Password
-                </label>
-                <input
-                  id="confirmPassword"
-                  name="confirmPassword"
-                  type="password"
-                  autoComplete="new-password"
-                  required
-                  value={formData.confirmPassword}
-                  onChange={handleChange}
-                  className="clay-input w-full px-4 py-3 text-gray-900 placeholder-gray-500 text-sm"
-                  placeholder="Confirm your password"
-                />
-              </div>
-            </div>
+          <FormGroup>
+            <MediumLabel htmlFor="confirmPassword">Confirm Password</MediumLabel>
+            <MediumInput
+              id="confirmPassword"
+              name="confirmPassword"
+              type="password"
+              autoComplete="new-password"
+              required
+              value={formData.confirmPassword}
+              onChange={handleChange}
+              placeholder="Confirm your password"
+            />
+          </FormGroup>
 
-            <div>
-              <button
-                type="submit"
-                disabled={isLoading}
-                className="clay-button w-full py-3 px-4 text-gray-800 font-medium text-sm disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isLoading ? 'Creating account...' : 'Create account'}
-              </button>
-            </div>
+          <MediumButton type="submit" disabled={isLoading}>
+            {isLoading ? 'Creating account...' : 'Create account'}
+          </MediumButton>
+        </Form>
 
-            <div className="text-center pt-4">
-              <p className="text-sm text-gray-600">
-                Already have an account?{' '}
-                <Link to="/login" className="font-medium text-indigo-600 hover:text-indigo-500 transition-colors">
-                  Sign in here
-                </Link>
-              </p>
-            </div>
-          </form>
+        <div style={{ textAlign: 'center', paddingTop: '2rem' }}>
+          <Text style={{ fontSize: '1.125rem' }}>
+            Already have an account?{' '}
+            <StyledLink to="/login">Sign in here</StyledLink>
+          </Text>
         </div>
-      </div>
-    </div>
+      </MediumCard>
+    </PageContainer>
   );
 };
 
