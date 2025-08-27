@@ -70,6 +70,51 @@ export const api = {
       
       return handleResponse(response);
     }
+  },
+  
+  trips: {
+    async list() {
+      const response = await fetch(`${API_BASE}/api/trips`, {
+        credentials: 'include',
+      });
+      
+      return handleResponse(response);
+    },
+    
+    async create(tripData) {
+      const response = await fetch(`${API_BASE}/api/trips`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify(tripData),
+      });
+      
+      return handleResponse(response);
+    },
+    
+    async update(id, tripData) {
+      const response = await fetch(`${API_BASE}/api/trips/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify(tripData),
+      });
+      
+      return handleResponse(response);
+    },
+    
+    async delete(id) {
+      const response = await fetch(`${API_BASE}/api/trips/${id}`, {
+        method: 'DELETE',
+        credentials: 'include',
+      });
+      
+      return handleResponse(response);
+    }
   }
 };
 

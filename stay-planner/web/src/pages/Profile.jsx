@@ -19,6 +19,8 @@ import {
   Form
 } from '../styles/common';
 import styled from '@emotion/styled';
+import Breadcrumb from '../components/Breadcrumb';
+import { User, Mail, Shield, Save } from 'lucide-react';
 
 // Profile-specific styled components
 const ProfileContainer = styled.div`
@@ -226,6 +228,8 @@ const Profile = () => {
 
   return (
     <ProfileContainer>
+      <Breadcrumb currentPage="Profile Settings" />
+      
       <HeaderSection>
         <PageTitle>My Profile 👤</PageTitle>
         <PageSubtitle>

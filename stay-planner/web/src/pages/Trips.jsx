@@ -1,340 +1,234 @@
-import React, { useState } from 'react';
-import {
-  Card,
-  Title,
-  Subtitle,
-  Text,
-  Button,
-  Grid2,
-  FlexCenter,
-  FlexBetween,
-  IconContainer,
-  Icon,
-  Spacer,
-  SuccessMessage,
-  InfoMessage,
-  Input,
-  Label,
-  FormGroup,
-  Form
-} from '../styles/common';
+import React, { useState, useEffect } from 'react';
 import styled from '@emotion/styled';
+import TripForm from '../components/TripForm';
+import TripsTable from '../components/TripsTable';
+import Breadcrumb from '../components/Breadcrumb';
+import { Card, Title, Toast } from '../styles/common';
+import { api } from '../utils/api';
+import { Plus, X } from 'lucide-react';
 
-// Trips-specific styled components
-const TripsContainer = styled.div`
-  min-height: 100vh;
-  background: linear-gradient(135deg, #E8F4FD 0%, #F0E6FF 50%, #E6F7F0 100%);
-  padding: 2rem;
-`;
-
-const HeaderSection = styled.div`
-  text-align: center;
-  margin-bottom: 3rem;
-`;
-
-const PageTitle = styled.h1`
-  font-size: 3rem;
-  font-weight: bold;
-  background: linear-gradient(135deg, #3b82f6, #8b5cf6, #10b981);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  margin-bottom: 1rem;
-`;
-
-const PageSubtitle = styled.p`
-  font-size: 1.25rem;
-  color: #6b7280;
-  max-width: 600px;
+const PageContainer = styled.div`
+  max-width: 1200px;
   margin: 0 auto;
 `;
 
-const AddTripSection = styled(Card)`
-  margin-bottom: 3rem;
-  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
-  border: 2px solid rgba(255, 255, 255, 0.8);
-  box-shadow: 
-    0 20px 25px -5px rgba(0, 0, 0, 0.1),
-    0 10px 10px -5px rgba(0, 0, 0, 0.04),
-    inset 0 1px 0 rgba(255, 255, 255, 0.8);
-`;
-
-const AddTripForm = styled(Form)`
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 1.5rem;
-  align-items: end;
-`;
-
-const AddButton = styled(Button)`
-  background: linear-gradient(135deg, #10b981, #059669);
-  border: none;
-  padding: 1rem 2rem;
-  border-radius: 1rem;
-  font-weight: 600;
-  box-shadow: 
-    0 10px 15px -3px rgba(16, 185, 129, 0.3),
-    0 4px 6px -2px rgba(16, 185, 129, 0.2);
-  
-  &:hover {
-    background: linear-gradient(135deg, #059669, #047857);
-    transform: translateY(-2px);
-    box-shadow: 
-      0 20px 25px -5px rgba(16, 185, 129, 0.4),
-      0 10px 10px -5px rgba(16, 185, 129, 0.3);
-  }
-`;
-
-const TripsGrid = styled(Grid2)`
+const PageHeader = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   margin-bottom: 2rem;
 `;
 
-const TripCard = styled(Card)`
-  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
-  border: 2px solid rgba(255, 255, 255, 0.8);
-  box-shadow: 
-    0 20px 25px -5px rgba(0, 0, 0, 0.1),
-    0 10px 10px -5px rgba(0, 0, 0, 0.04),
-    inset 0 1px 0 rgba(255, 255, 255, 0.8);
-  transition: all 0.3s ease;
-  position: relative;
-  overflow: hidden;
-  
-  &:hover {
-    transform: translateY(-4px);
-    box-shadow: 
-      0 25px 50px -12px rgba(0, 0, 0, 0.15),
-      0 20px 20px -10px rgba(0, 0, 0, 0.08),
-      inset 0 1px 0 rgba(255, 255, 255, 0.9);
-  }
-  
-  &::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 4px;
-    background: linear-gradient(90deg, #3b82f6, #8b5cf6, #10b981);
-  }
-`;
-
-const TripHeader = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 1rem;
-`;
-
-const TripCountry = styled.h3`
-  font-size: 1.5rem;
-  font-weight: bold;
-  color: #1f2937;
+const PageTitle = styled(Title)`
   margin: 0;
 `;
 
-const TripDates = styled.div`
+const AddButton = styled.button`
   display: flex;
-  gap: 1rem;
-  margin-bottom: 1rem;
-`;
-
-const DateItem = styled.div`
-  text-align: center;
-`;
-
-const DateLabel = styled.div`
-  font-size: 0.875rem;
-  color: #6b7280;
-  font-weight: 500;
-  margin-bottom: 0.25rem;
-`;
-
-const DateValue = styled.div`
-  font-size: 1.125rem;
-  font-weight: 600;
-  color: #1f2937;
-`;
-
-const TripActions = styled.div`
-  display: flex;
-  gap: 0.75rem;
-  margin-top: 1rem;
-`;
-
-const ActionButton = styled(Button)`
-  padding: 0.5rem 1rem;
-  font-size: 0.875rem;
-  border-radius: 0.5rem;
-  flex: 1;
-`;
-
-const EditButton = styled(ActionButton)`
-  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  background: var(--color-primary);
+  color: white;
+  border: none;
+  border-radius: var(--radius-md);
+  font-weight: var(--font-weight-medium);
+  cursor: pointer;
+  transition: all var(--transition-normal);
   
   &:hover {
-    background: linear-gradient(135deg, #2563eb, #1d4ed8);
+    background: var(--color-primary-hover);
+    transform: translateY(-1px);
+  }
+  
+  svg {
+    width: 18px;
+    height: 18px;
   }
 `;
 
-const DeleteButton = styled(ActionButton)`
-  background: linear-gradient(135deg, #ef4444, #dc2626);
+const Modal = styled.div`
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: var(--z-modal);
+  padding: 1rem;
+`;
+
+const ModalContent = styled.div`
+  background: var(--color-surface);
+  border-radius: var(--radius-lg);
+  max-width: 90vw;
+  max-height: 90vh;
+  overflow-y: auto;
+  position: relative;
+`;
+
+const CloseButton = styled.button`
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  background: var(--color-surface-light);
+  border: 1px solid var(--color-border);
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all var(--transition-normal);
+  z-index: 10;
   
   &:hover {
-    background: linear-gradient(135deg, #dc2626, #b91c1c);
+    background: var(--color-surface-hover);
+    border-color: var(--color-error);
+    color: var(--color-error);
   }
-`;
-
-const EmptyState = styled.div`
-  text-align: center;
-  padding: 4rem 2rem;
-`;
-
-const EmptyIcon = styled.div`
-  font-size: 4rem;
-  margin-bottom: 1rem;
-  opacity: 0.6;
+  
+  svg {
+    width: 20px;
+    height: 20px;
+  }
 `;
 
 const Trips = () => {
-  const [trips, setTrips] = useState([
-    {
-      id: 1,
-      country: 'France',
-      startDate: '2024-01-15',
-      endDate: '2024-01-30',
-      days: 15
-    },
-    {
-      id: 2,
-      country: 'Germany',
-      startDate: '2024-02-10',
-      endDate: '2024-02-25',
-      days: 15
-    }
-  ]);
+  const [trips, setTrips] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [showForm, setShowForm] = useState(false);
+  const [editingTrip, setEditingTrip] = useState(null);
+  const [toast, setToast] = useState(null);
 
-  const [newTrip, setNewTrip] = useState({
-    country: '',
-    startDate: '',
-    endDate: ''
-  });
+  useEffect(() => {
+    fetchTrips();
+  }, []);
 
-  const handleAddTrip = (e) => {
-    e.preventDefault();
-    if (newTrip.country && newTrip.startDate && newTrip.endDate) {
-      const trip = {
-        id: Date.now(),
-        ...newTrip,
-        days: Math.ceil((new Date(newTrip.endDate) - new Date(newTrip.startDate)) / (1000 * 60 * 60 * 24))
-      };
-      setTrips([...trips, trip]);
-      setNewTrip({ country: '', startDate: '', endDate: '' });
+  const fetchTrips = async () => {
+    try {
+      const data = await api.trips.list();
+      setTrips(data.trips || []);
+    } catch (error) {
+      console.error('Failed to fetch trips:', error);
+      showToast(error.message || 'Failed to load trips', 'error');
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleDeleteTrip = (id) => {
-    setTrips(trips.filter(trip => trip.id !== id));
+  const handleSubmit = async (formData) => {
+    try {
+      let data;
+      
+      if (editingTrip) {
+        data = await api.trips.update(editingTrip.id, formData);
+        setTrips(prev => prev.map(trip => 
+          trip.id === editingTrip.id ? data.trip : trip
+        ));
+        showToast('Trip updated successfully!', 'success');
+      } else {
+        data = await api.trips.create(formData);
+        setTrips(prev => [...prev, data.trip]);
+        showToast('Trip added successfully!', 'success');
+      }
+      
+      handleCloseForm();
+    } catch (error) {
+      console.error('Failed to save trip:', error);
+      showToast(error.message || 'Failed to save trip', 'error');
+    }
   };
+
+  const handleEdit = (trip) => {
+    setEditingTrip(trip);
+    setShowForm(true);
+  };
+
+  const handleDelete = async (tripId) => {
+    if (!window.confirm('Are you sure you want to delete this trip?')) {
+      return;
+    }
+
+    try {
+      await api.trips.delete(tripId);
+      setTrips(prev => prev.filter(trip => trip.id !== tripId));
+      showToast('Trip deleted successfully!', 'success');
+    } catch (error) {
+      console.error('Failed to delete trip:', error);
+      showToast(error.message || 'Failed to delete trip', 'error');
+    }
+  };
+
+  const handleCloseForm = () => {
+    setShowForm(false);
+    setEditingTrip(null);
+  };
+
+  const showToast = (message, type = 'info') => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 3000);
+  };
+
+  if (loading) {
+    return (
+      <PageContainer>
+        <Breadcrumb currentPage="Manage Trips" />
+        <Card>
+          <div style={{ textAlign: 'center', padding: '3rem' }}>
+            <div style={{ fontSize: '2rem', marginBottom: '1rem' }}>⏳</div>
+            <div>Loading trips...</div>
+          </div>
+        </Card>
+      </PageContainer>
+    );
+  }
 
   return (
-    <TripsContainer>
-      <HeaderSection>
-        <PageTitle>My Trips ✈️</PageTitle>
-        <PageSubtitle>
-          Manage your travel plans and track your Schengen status
-        </PageSubtitle>
-      </HeaderSection>
+    <PageContainer>
+      <Breadcrumb currentPage="Manage Trips" />
+      
+      <PageHeader>
+        <PageTitle>Manage Trips</PageTitle>
+        <AddButton onClick={() => setShowForm(true)}>
+          <Plus />
+          Add Trip
+        </AddButton>
+      </PageHeader>
 
-      <AddTripSection>
-        <Title style={{ marginBottom: '1.5rem', textAlign: 'center' }}>
-          Add New Trip
-        </Title>
-        <AddTripForm onSubmit={handleAddTrip}>
-          <FormGroup>
-            <Label htmlFor="country">Country</Label>
-            <Input
-              id="country"
-              type="text"
-              placeholder="e.g., France, Germany"
-              value={newTrip.country}
-              onChange={(e) => setNewTrip({ ...newTrip, country: e.target.value })}
-              required
-            />
-          </FormGroup>
-          
-          <FormGroup>
-            <Label htmlFor="startDate">Start Date</Label>
-            <Input
-              id="startDate"
-              type="date"
-              value={newTrip.startDate}
-              onChange={(e) => setNewTrip({ ...newTrip, startDate: e.target.value })}
-              required
-            />
-          </FormGroup>
-          
-          <FormGroup>
-            <Label htmlFor="endDate">End Date</Label>
-            <Input
-              id="endDate"
-              type="date"
-              value={newTrip.endDate}
-              onChange={(e) => setNewTrip({ ...newTrip, endDate: e.target.value })}
-              required
-            />
-          </FormGroup>
-          
-          <AddButton type="submit">
-            ✈️ Add Trip
-          </AddButton>
-        </AddTripForm>
-      </AddTripSection>
+      <TripsTable
+        trips={trips}
+        onEdit={handleEdit}
+        onDelete={handleDelete}
+        onAddNew={() => setShowForm(true)}
+      />
 
-      {trips.length > 0 ? (
-        <TripsGrid>
-          {trips.map((trip) => (
-            <TripCard key={trip.id}>
-              <TripHeader>
-                <TripCountry>🇫🇷 {trip.country}</TripCountry>
-                <Text style={{ color: '#10b981', fontWeight: '600' }}>
-                  {trip.days} days
-                </Text>
-              </TripHeader>
-              
-              <TripDates>
-                <DateItem>
-                  <DateLabel>Start</DateLabel>
-                  <DateValue>{new Date(trip.startDate).toLocaleDateString()}</DateValue>
-                </DateItem>
-                <DateItem>
-                  <DateLabel>End</DateLabel>
-                  <DateValue>{new Date(trip.endDate).toLocaleDateString()}</DateValue>
-                </DateItem>
-              </TripDates>
-              
-              <TripActions>
-                <EditButton>✏️ Edit</EditButton>
-                <DeleteButton onClick={() => handleDeleteTrip(trip.id)}>
-                  🗑️ Delete
-                </DeleteButton>
-              </TripActions>
-            </TripCard>
-          ))}
-        </TripsGrid>
-      ) : (
-        <EmptyState>
-          <EmptyIcon>✈️</EmptyIcon>
-          <Title style={{ marginBottom: '1rem' }}>No Trips Yet</Title>
-          <Text style={{ color: '#6b7280', marginBottom: '2rem' }}>
-            Start planning your adventures by adding your first trip!
-          </Text>
-          <AddButton onClick={() => document.getElementById('country').focus()}>
-            ✈️ Plan Your First Trip
-          </AddButton>
-        </EmptyState>
+      {showForm && (
+        <Modal onClick={handleCloseForm}>
+          <ModalContent onClick={(e) => e.stopPropagation()}>
+            <CloseButton onClick={handleCloseForm}>
+              <X />
+            </CloseButton>
+            <TripForm
+              onSubmit={handleSubmit}
+              onCancel={handleCloseForm}
+              initialData={editingTrip}
+              isEditing={!!editingTrip}
+            />
+          </ModalContent>
+        </Modal>
       )}
-    </TripsContainer>
+
+      {toast && (
+        <Toast className={`toast-${toast.type}`}>
+          {toast.message}
+        </Toast>
+      )}
+    </PageContainer>
   );
 };
 

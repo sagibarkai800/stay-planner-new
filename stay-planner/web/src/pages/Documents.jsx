@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Card,
   Title,
@@ -20,6 +20,8 @@ import {
   Form
 } from '../styles/common';
 import styled from '@emotion/styled';
+import Breadcrumb from '../components/Breadcrumb';
+import { Upload, FileText, Download, Trash2 } from 'lucide-react';
 
 // Documents-specific styled components
 const DocumentsContainer = styled.div`
@@ -252,6 +254,14 @@ const Documents = () => {
   ]);
 
   const [isDragging, setIsDragging] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    // Simulate loading documents
+    setTimeout(() => {
+      setLoading(false);
+    }, 1000);
+  }, []);
 
   const handleFileUpload = (files) => {
     const newDocs = Array.from(files).map((file, index) => ({
@@ -272,8 +282,24 @@ const Documents = () => {
     return type === 'pdf' ? '📄' : '🖼️';
   };
 
+  if (loading) {
+    return (
+      <DocumentsContainer>
+        <Breadcrumb currentPage="Documents" />
+        <Card>
+          <div style={{ textAlign: 'center', padding: '3rem' }}>
+            <div style={{ fontSize: '2rem', marginBottom: '1rem' }}>⏳</div>
+            <div>Loading documents...</div>
+          </div>
+        </Card>
+      </DocumentsContainer>
+    );
+  }
+
   return (
     <DocumentsContainer>
+      <Breadcrumb currentPage="Documents" />
+      
       <HeaderSection>
         <PageTitle>My Documents 📄</PageTitle>
         <PageSubtitle>

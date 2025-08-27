@@ -1,151 +1,246 @@
 import React from 'react';
-import { Link, Outlet, useNavigate, useLocation } from 'react-router-dom';
-import { api } from '../api/client';
+import { Outlet, NavLink, useNavigate } from 'react-router-dom';
 import styled from '@emotion/styled';
-import {
-  Button,
-  Text,
-  FlexBetween
-} from '../styles/common';
+import { api } from '../utils/api';
+import { 
+  Home,
+  Plane, 
+  Calendar, 
+  FileText, 
+  Settings, 
+  LogOut,
+  User
+} from 'lucide-react';
 
 const LayoutContainer = styled.div`
+  display: flex;
   min-height: 100vh;
-  background: linear-gradient(135deg, #E8F4FD 0%, #F0E6FF 50%, #E6F7F0 100%);
+  background: var(--color-bg);
 `;
 
-const Navbar = styled.nav`
-  background: rgba(255, 255, 255, 0.9);
-  backdrop-filter: blur(10px);
-  border-bottom: 2px solid rgba(255, 255, 255, 0.8);
-  box-shadow: 
-    0 4px 6px -1px rgba(0, 0, 0, 0.1),
-    0 2px 4px -1px rgba(0, 0, 0, 0.06),
-    inset 0 1px 0 rgba(255, 255, 255, 0.8);
-  padding: 1rem 2rem;
+const Sidebar = styled.aside`
+  width: 280px;
+  background: var(--color-surface);
+  border-right: 1px solid var(--color-border);
+  padding: 2rem 0;
+  display: flex;
+  flex-direction: column;
 `;
 
-const NavContent = styled.div`
-  max-width: 1200px;
-  margin: 0 auto;
+const SidebarHeader = styled.div`
+  padding: 0 2rem 2rem;
+  border-bottom: 1px solid var(--color-border);
+  margin-bottom: 2rem;
+`;
+
+const AppTitle = styled.h1`
+  font-size: var(--font-size-2xl);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-primary);
+  margin: 0;
+`;
+
+const AppSubtitle = styled.p`
+  color: var(--color-text-secondary);
+  margin: 0.5rem 0 0;
+  font-size: var(--font-size-sm);
+`;
+
+const NavMenu = styled.nav`
+  flex: 1;
+  padding: 0 1rem;
+`;
+
+const NavList = styled.ul`
+  list-style: none;
+  padding: 0;
+  margin: 0;
+`;
+
+const NavItem = styled.li`
+  margin-bottom: 0.5rem;
+`;
+
+const NavLinkStyled = styled(NavLink)`
   display: flex;
   align-items: center;
-  justify-content: space-between;
-`;
-
-const Logo = styled(Link)`
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
+  padding: 1rem 1.5rem;
+  color: var(--color-text-secondary);
   text-decoration: none;
-  color: #1f2937;
-  font-weight: bold;
-  font-size: 1.5rem;
+  border-radius: var(--radius-lg);
+  transition: all var(--transition-normal);
+  font-weight: var(--font-weight-medium);
   
   &:hover {
-    color: #3b82f6;
-  }
-`;
-
-const LogoIcon = styled.span`
-  font-size: 2rem;
-`;
-
-const NavLinks = styled.div`
-  display: flex;
-  gap: 2rem;
-  align-items: center;
-`;
-
-const NavLink = styled(Link)`
-  text-decoration: none;
-  color: #6b7280;
-  font-weight: 500;
-  padding: 0.5rem 1rem;
-  border-radius: 0.75rem;
-  transition: all 0.2s;
-  
-  &:hover {
-    color: #3b82f6;
-    background: rgba(59, 130, 246, 0.1);
+    background: var(--color-surface-hover);
+    color: var(--color-text);
   }
   
   &.active {
-    color: #3b82f6;
-    background: rgba(59, 130, 246, 0.1);
+    background: var(--color-primary);
+    color: white;
+    
+    svg {
+      color: white;
+    }
+  }
+  
+  svg {
+    width: 20px;
+    height: 20px;
+    margin-right: 1rem;
+    color: var(--color-text-secondary);
+    transition: color var(--transition-normal);
   }
 `;
 
-const LogoutButton = styled(Button)`
-  background: linear-gradient(135deg, #ef4444, #dc2626);
-  border: none;
-  padding: 0.75rem 1.5rem;
-  border-radius: 0.75rem;
-  font-size: 0.875rem;
-  font-weight: 500;
-  box-shadow: 
-    0 10px 15px -3px rgba(239, 68, 68, 0.3),
-    0 4px 6px -2px rgba(239, 68, 68, 0.2);
+const UserSection = styled.div`
+  padding: 1.5rem;
+  border-top: 1px solid var(--color-border);
+  margin-top: auto;
+`;
+
+const UserInfo = styled.div`
+  display: flex;
+  align-items: center;
+  margin-bottom: 1rem;
+`;
+
+const UserAvatar = styled.div`
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--color-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 1rem;
+  color: white;
+  font-weight: var(--font-weight-semibold);
+`;
+
+const UserDetails = styled.div`
+  flex: 1;
+`;
+
+const UserName = styled.div`
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text);
+  margin-bottom: 0.25rem;
+`;
+
+const UserEmail = styled.div`
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+`;
+
+const LogoutButton = styled.button`
+  width: 100%;
+  padding: 0.75rem 1rem;
+  background: var(--color-surface-light);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: all var(--transition-normal);
+  display: flex;
+  align-items: center;
+  justify-content: center;
   
   &:hover {
-    background: linear-gradient(135deg, #dc2626, #b91c1c);
-    transform: translateY(-1px);
-    box-shadow: 
-      0 20px 25px -5px rgba(239, 68, 68, 0.4),
-      0 10px 10px -5px rgba(239, 68, 68, 0.3);
+    background: var(--color-surface-hover);
+    color: var(--color-error);
+    border-color: var(--color-error);
+  }
+  
+  svg {
+    width: 16px;
+    height: 16px;
+    margin-right: 0.5rem;
   }
 `;
 
 const MainContent = styled.main`
-  max-width: 1200px;
-  margin: 0 auto;
+  flex: 1;
   padding: 2rem;
+  overflow-y: auto;
 `;
 
 const AppLayout = () => {
   const navigate = useNavigate();
-  const location = useLocation();
-
+  
   const handleLogout = async () => {
     try {
       await api.auth.logout();
       navigate('/login');
     } catch (error) {
-      console.error('Logout error:', error);
+      console.error('Logout failed:', error);
+      // Still redirect even if logout fails
       navigate('/login');
     }
   };
 
-  const isActive = (path) => location.pathname === path;
-
   return (
     <LayoutContainer>
-      <Navbar>
-        <NavContent>
-          <Logo to="/app">
-            <LogoIcon>🏠</LogoIcon>
-            Stay Planner
-          </Logo>
+      <Sidebar>
+        <SidebarHeader>
+          <AppTitle>Stay Planner</AppTitle>
+          <AppSubtitle>Manage your travel compliance</AppSubtitle>
+        </SidebarHeader>
+        
+        <NavMenu>
+          <NavList>
+            <NavItem>
+              <NavLinkStyled to="/app">
+                <Home />
+                Home
+              </NavLinkStyled>
+            </NavItem>
+            <NavItem>
+              <NavLinkStyled to="/app/trips">
+                <Plane />
+                Trips
+              </NavLinkStyled>
+            </NavItem>
+            <NavItem>
+              <NavLinkStyled to="/app/calendar">
+                <Calendar />
+                Calendar
+              </NavLinkStyled>
+            </NavItem>
+            <NavItem>
+              <NavLinkStyled to="/app/docs">
+                <FileText />
+                Documents
+              </NavLinkStyled>
+            </NavItem>
+            <NavItem>
+              <NavLinkStyled to="/app/settings">
+                <Settings />
+                Settings
+              </NavLinkStyled>
+            </NavItem>
+          </NavList>
+        </NavMenu>
+        
+        <UserSection>
+          <UserInfo>
+            <UserAvatar>
+              <User size={20} />
+            </UserAvatar>
+            <UserDetails>
+              <UserName>Traveler</UserName>
+              <UserEmail>user@example.com</UserEmail>
+            </UserDetails>
+          </UserInfo>
           
-          <NavLinks>
-            <NavLink to="/app" className={isActive('/app') ? 'active' : ''}>
-              Dashboard
-            </NavLink>
-            <NavLink to="/app/trips" className={isActive('/app/trips') ? 'active' : ''}>
-              Trips
-            </NavLink>
-            <NavLink to="/app/documents" className={isActive('/app/documents') ? 'active' : ''}>
-              Documents
-            </NavLink>
-            <NavLink to="/app/profile" className={isActive('/app/profile') ? 'active' : ''}>
-              Profile
-            </NavLink>
-            <LogoutButton onClick={handleLogout}>
-              Logout
-            </LogoutButton>
-          </NavLinks>
-        </NavContent>
-      </Navbar>
-
+          <LogoutButton onClick={handleLogout}>
+            <LogOut />
+            Logout
+          </LogoutButton>
+        </UserSection>
+      </Sidebar>
+      
       <MainContent>
         <Outlet />
       </MainContent>

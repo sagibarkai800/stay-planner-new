@@ -1,26 +1,32 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import {
+import styled from '@emotion/styled';
+import { api } from '../utils/api';
+import { 
+  Card, 
+  Form, 
+  FormGroup, 
+  Label, 
+  Input, 
+  Button, 
+  Title, 
+  Text, 
+  StyledLink, 
+  ErrorMessage,
+  Toast,
   PageContainer,
   MediumCard,
+  FlexCenter,
   MediumIconContainer,
   MediumIcon,
   MediumTitle,
   MediumSubtitle,
-  Form,
-  FormGroup,
+  Spacer,
   MediumLabel,
   MediumInput,
-  MediumButton,
-  ErrorMessage,
-  Text,
-  StyledLink,
-  FlexCenter,
-  Spacer,
-  Toast
+  MediumButton
 } from '../styles/common';
-import { api, ApiError } from '../utils/api';
-import styled from '@emotion/styled';
+import { LogIn, Mail, Lock } from 'lucide-react';
 
 const LoginContainer = styled.div`
   width: 100%;
@@ -28,55 +34,30 @@ const LoginContainer = styled.div`
 `;
 
 const Login = () => {
-  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     email: '',
     password: ''
   });
   const [errors, setErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
-  const [toastError, setToastError] = useState('');
+  const [toast, setToast] = useState(null);
+  const navigate = useNavigate();
 
   const validateForm = () => {
     const newErrors = {};
-
-    // Email validation
+    
     if (!formData.email) {
       newErrors.email = 'Email is required';
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = 'Please enter a valid email address';
+      newErrors.email = 'Email is invalid';
     }
-
-    // Password validation
+    
     if (!formData.password) {
       newErrors.password = 'Password is required';
-    } else if (formData.password.length < 6) {
-      newErrors.password = 'Password must be at least 6 characters';
     }
-
+    
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
-  };
-
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-    
-    // Clear error when user starts typing
-    if (errors[name]) {
-      setErrors(prev => ({
-        ...prev,
-        [name]: ''
-      }));
-    }
-  };
-
-  const showErrorToast = (message) => {
-    setToastError(message);
-    setTimeout(() => setToastError(''), 5000);
   };
 
   const handleSubmit = async (e) => {
@@ -85,30 +66,39 @@ const Login = () => {
     if (!validateForm()) {
       return;
     }
-
+    
     setIsLoading(true);
     
     try {
       await api.auth.login(formData);
-      // Success - cookie is automatically set by the server
       navigate('/app');
     } catch (error) {
-      console.error('Login error:', error);
-      if (error instanceof ApiError) {
-        showErrorToast(error.message);
-      } else {
-        showErrorToast('Network error. Please check your connection.');
-      }
+      console.error('Login failed:', error);
+      showToast(error.message || 'Login failed. Please check your credentials.', 'error');
     } finally {
       setIsLoading(false);
     }
   };
 
+  const handleInputChange = (field, value) => {
+    setFormData(prev => ({ ...prev, [field]: value }));
+    
+    // Clear error when user starts typing
+    if (errors[field]) {
+      setErrors(prev => ({ ...prev, [field]: '' }));
+    }
+  };
+
+  const showToast = (message, type = 'info') => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 3000);
+  };
+
   return (
     <>
-      {toastError && (
-        <Toast className="toast-error">
-          {toastError}
+      {toast && (
+        <Toast className={`toast-${toast.type}`}>
+          {toast.message}
         </Toast>
       )}
       
@@ -142,7 +132,7 @@ const Login = () => {
                   type="email"
                   placeholder="Enter your email"
                   value={formData.email}
-                  onChange={handleInputChange}
+                  onChange={(e) => handleInputChange('email', e.target.value)}
                   error={!!errors.email}
                   disabled={isLoading}
                 />
@@ -161,7 +151,7 @@ const Login = () => {
                   type="password"
                   placeholder="Enter your password"
                   value={formData.password}
-                  onChange={handleInputChange}
+                  onChange={(e) => handleInputChange('password', e.target.value)}
                   error={!!errors.password}
                   disabled={isLoading}
                 />
