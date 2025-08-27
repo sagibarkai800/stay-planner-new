@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { api } from '../api/client';
+import { useNavigate, Link } from 'react-router-dom';
 import {
   PageContainer,
   MediumCard,
@@ -15,98 +14,181 @@ import {
   MediumButton,
   ErrorMessage,
   Text,
-  StyledLink
+  StyledLink,
+  FlexCenter,
+  Spacer,
+  Toast
 } from '../styles/common';
+import { api, ApiError } from '../utils/api';
+import styled from '@emotion/styled';
+
+const LoginContainer = styled.div`
+  width: 100%;
+  max-width: 28rem;
+`;
 
 const Login = () => {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     email: '',
     password: ''
   });
+  const [errors, setErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState('');
-  const navigate = useNavigate();
+  const [toastError, setToastError] = useState('');
 
-  const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
-    });
+  const validateForm = () => {
+    const newErrors = {};
+
+    // Email validation
+    if (!formData.email) {
+      newErrors.email = 'Email is required';
+    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
+      newErrors.email = 'Please enter a valid email address';
+    }
+
+    // Password validation
+    if (!formData.password) {
+      newErrors.password = 'Password is required';
+    } else if (formData.password.length < 6) {
+      newErrors.password = 'Password must be at least 6 characters';
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+    
+    // Clear error when user starts typing
+    if (errors[name]) {
+      setErrors(prev => ({
+        ...prev,
+        [name]: ''
+      }));
+    }
+  };
+
+  const showErrorToast = (message) => {
+    setToastError(message);
+    setTimeout(() => setToastError(''), 5000);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setIsLoading(true);
-    setError('');
+    
+    if (!validateForm()) {
+      return;
+    }
 
+    setIsLoading(true);
+    
     try {
       await api.auth.login(formData);
+      // Success - cookie is automatically set by the server
       navigate('/app');
     } catch (error) {
-      setError(error.response?.data?.error || 'Login failed. Please try again.');
+      console.error('Login error:', error);
+      if (error instanceof ApiError) {
+        showErrorToast(error.message);
+      } else {
+        showErrorToast('Network error. Please check your connection.');
+      }
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <PageContainer>
-      <MediumCard>
-        <MediumIconContainer style={{ margin: '0 auto 2rem' }}>
-          <MediumIcon>🏠</MediumIcon>
-        </MediumIconContainer>
-        
-        <MediumTitle style={{ textAlign: 'center' }}>Stay Planner</MediumTitle>
-        <MediumSubtitle style={{ textAlign: 'center' }}>Sign in to your account</MediumSubtitle>
-        
-        <Form onSubmit={handleSubmit}>
-          {error && (
-            <ErrorMessage>
-              <Text style={{ color: '#b91c1c', fontSize: '1rem' }}>{error}</Text>
-            </ErrorMessage>
-          )}
-          
-          <FormGroup>
-            <MediumLabel htmlFor="email">Email address</MediumLabel>
-            <MediumInput
-              id="email"
-              name="email"
-              type="email"
-              autoComplete="email"
-              required
-              value={formData.email}
-              onChange={handleChange}
-              placeholder="Enter your email"
-            />
-          </FormGroup>
-          
-          <FormGroup>
-            <MediumLabel htmlFor="password">Password</MediumLabel>
-            <MediumInput
-              id="password"
-              name="password"
-              type="password"
-              autoComplete="current-password"
-              required
-              value={formData.password}
-              onChange={handleChange}
-              placeholder="Enter your password"
-            />
-          </FormGroup>
-
-          <MediumButton type="submit" disabled={isLoading}>
-            {isLoading ? 'Signing in...' : 'Sign in'}
-          </MediumButton>
-        </Form>
-
-        <div style={{ textAlign: 'center', paddingTop: '2rem' }}>
-          <Text style={{ fontSize: '1.125rem' }}>
-            Don't have an account?{' '}
-            <StyledLink to="/register">Sign up here</StyledLink>
-          </Text>
-        </div>
-      </MediumCard>
-    </PageContainer>
+    <>
+      {toastError && (
+        <Toast className="toast-error">
+          {toastError}
+        </Toast>
+      )}
+      
+      <PageContainer>
+        <LoginContainer>
+          <MediumCard>
+            <FlexCenter>
+              <MediumIconContainer>
+                <MediumIcon>🔐</MediumIcon>
+              </MediumIconContainer>
+            </FlexCenter>
+            
+            <Spacer size="var(--spacing-8)" />
+            
+            <MediumTitle style={{ textAlign: 'center' }}>
+              Welcome Back
+            </MediumTitle>
+            
+            <MediumSubtitle style={{ textAlign: 'center' }}>
+              Sign in to your account to continue
+            </MediumSubtitle>
+            
+            <Spacer size="var(--spacing-8)" />
+            
+            <Form onSubmit={handleSubmit}>
+              <FormGroup>
+                <MediumLabel htmlFor="email">Email Address</MediumLabel>
+                <MediumInput
+                  id="email"
+                  name="email"
+                  type="email"
+                  placeholder="Enter your email"
+                  value={formData.email}
+                  onChange={handleInputChange}
+                  error={!!errors.email}
+                  disabled={isLoading}
+                />
+                {errors.email && (
+                  <ErrorMessage style={{ marginTop: 'var(--spacing-2)' }}>
+                    {errors.email}
+                  </ErrorMessage>
+                )}
+              </FormGroup>
+              
+              <FormGroup>
+                <MediumLabel htmlFor="password">Password</MediumLabel>
+                <MediumInput
+                  id="password"
+                  name="password"
+                  type="password"
+                  placeholder="Enter your password"
+                  value={formData.password}
+                  onChange={handleInputChange}
+                  error={!!errors.password}
+                  disabled={isLoading}
+                />
+                {errors.password && (
+                  <ErrorMessage style={{ marginTop: 'var(--spacing-2)' }}>
+                    {errors.password}
+                  </ErrorMessage>
+                )}
+              </FormGroup>
+              
+              <Spacer size="var(--spacing-6)" />
+              
+              <MediumButton type="submit" disabled={isLoading}>
+                {isLoading ? 'Signing In...' : 'Sign In'}
+              </MediumButton>
+            </Form>
+            
+            <Spacer size="var(--spacing-6)" />
+            
+            <Text style={{ textAlign: 'center' }}>
+              Don't have an account?{' '}
+              <StyledLink to="/register">Sign up here</StyledLink>
+            </Text>
+          </MediumCard>
+        </LoginContainer>
+      </PageContainer>
+    </>
   );
 };
 
