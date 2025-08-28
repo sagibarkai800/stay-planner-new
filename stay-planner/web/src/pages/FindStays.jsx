@@ -277,34 +277,50 @@ const FindStays = () => {
     }
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError(null);
-    setIsLoading(true);
-
-    try {
-      const response = await fetch('/api/stays/links', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData),
-        credentials: 'include'
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to generate links');
-      }
-
-      const data = await response.json();
-      setSearchResults(data);
-    } catch (error) {
-      setError(error.message);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+           const handleSubmit = async (e) => {
+           e.preventDefault();
+           setError(null);
+           setIsLoading(true);
+           
+           try {
+             console.log('🔍 Frontend: Submitting form data:', formData);
+             
+             const response = await fetch('/api/stays/links', {
+               method: 'POST',
+               headers: {
+                 'Content-Type': 'application/json',
+               },
+               body: JSON.stringify(formData),
+               credentials: 'include'
+             });
+             
+             console.log('🔍 Frontend: Response status:', response.status);
+             console.log('🔍 Frontend: Response headers:', response.headers);
+             
+             if (!response.ok) {
+               console.log('🔍 Frontend: Response not OK, trying to parse error');
+               let errorData;
+               try {
+                 errorData = await response.json();
+                 console.log('🔍 Frontend: Error data:', errorData);
+               } catch (parseError) {
+                 console.log('🔍 Frontend: Could not parse error response:', parseError);
+                 errorData = { error: `HTTP ${response.status}: ${response.statusText}` };
+               }
+               throw new Error(errorData.error || 'Failed to generate links');
+             }
+             
+             console.log('🔍 Frontend: Response OK, trying to parse data');
+             const data = await response.json();
+             console.log('🔍 Frontend: Parsed data:', data);
+             setSearchResults(data);
+           } catch (error) {
+             console.error('🔍 Frontend: Error in handleSubmit:', error);
+             setError(error.message);
+           } finally {
+             setIsLoading(false);
+           }
+         };
 
   const openUrl = (url) => {
     window.open(url, '_blank');
@@ -395,19 +411,40 @@ const FindStays = () => {
           </FormGroup>
         </FormGrid>
         
-        <SubmitButton type="submit" disabled={isLoading}>
-          {isLoading ? (
-            <>
-              <LoadingSpinner />
-              Generating Links...
-            </>
-          ) : (
-            <>
-              <Search size={20} />
-              Find Accommodation
-            </>
-          )}
-        </SubmitButton>
+                       <SubmitButton type="submit" disabled={isLoading}>
+                 {isLoading ? (
+                   <>
+                     <LoadingSpinner />
+                     Generating Links...
+                   </>
+                 ) : (
+                   <>
+                     <Search size={20} />
+                     Find Accommodation
+                   </>
+                 )}
+               </SubmitButton>
+               
+               <div style={{ marginTop: 'var(--spacing-4)', textAlign: 'center' }}>
+                 <Button 
+                   type="button" 
+                   variant="secondary" 
+                   onClick={async () => {
+                     try {
+                       console.log('🔍 Testing stays API endpoint...');
+                       const response = await fetch('/api/stays/test');
+                       const data = await response.json();
+                       console.log('🔍 Test response:', data);
+                       alert('API Test: ' + JSON.stringify(data, null, 2));
+                     } catch (error) {
+                       console.error('🔍 Test failed:', error);
+                       alert('API Test failed: ' + error.message);
+                     }
+                   }}
+                 >
+                   Test API Endpoint
+                 </Button>
+               </div>
       </SearchForm>
 
       {searchResults && (
@@ -428,6 +465,9 @@ const FindStays = () => {
               <CardDescription>
                 Find hotels, apartments, and vacation rentals with our affiliate partnership
               </CardDescription>
+              {searchResults.bookingUrl && searchResults.bookingUrl.includes('aid=DEMO') && (
+                <Badge style={{ marginBottom: 'var(--spacing-3)' }}>Demo Mode</Badge>
+              )}
               <CardButton onClick={() => openUrl(searchResults.bookingUrl)}>
                 <ExternalLink size={18} />
                 Search on Booking.com
