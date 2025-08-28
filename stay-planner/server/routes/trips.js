@@ -1,6 +1,7 @@
 const express = require('express');
 const { requireAuth } = require('../middleware/auth');
 const { createTrip, listTripsByUser, deleteTrip, updateTrip, getTripById } = require('../db');
+const { validateTripData, validateTripOverlap } = require('../lib/validation');
 
 const router = express.Router();
 
@@ -39,57 +40,31 @@ router.post('/', async (req, res) => {
     const { country, start_date, end_date } = req.body;
     const userId = req.user.id;
 
-    // Input validation
-    if (!country || !start_date || !end_date) {
+    // Basic validation
+    const basicValidation = validateTripData({ country, start_date, end_date });
+    if (!basicValidation.isValid) {
       return res.status(400).json({
         success: false,
-        error: 'Country, start_date, and end_date are required'
+        error: basicValidation.errors[0] || 'Validation failed',
+        details: basicValidation.errors
       });
     }
 
-    // Validate country format (should be 3-letter ISO code)
-    if (!/^[A-Z]{3}$/.test(country)) {
-      return res.status(400).json({
-        success: false,
-        error: 'Country must be a 3-letter ISO code (e.g., FRA, USA, GBR)'
-      });
-    }
-
-    // Validate date format (YYYY-MM-DD)
-    const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
-    if (!dateRegex.test(start_date) || !dateRegex.test(end_date)) {
-      return res.status(400).json({
-        success: false,
-        error: 'Dates must be in YYYY-MM-DD format'
-      });
-    }
-
-    // Validate dates are valid
-    const startDate = new Date(start_date);
-    const endDate = new Date(end_date);
+    // Get existing trips for overlap validation
+    const existingTrips = await listTripsByUser(userId);
     
-    if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+    // Check for overlaps
+    const overlapValidation = validateTripOverlap(
+      { country, start_date, end_date }, 
+      existingTrips
+    );
+    
+    if (!overlapValidation.isValid) {
       return res.status(400).json({
         success: false,
-        error: 'Invalid date format'
-      });
-    }
-
-    // Validate start_date < end_date
-    if (startDate >= endDate) {
-      return res.status(400).json({
-        success: false,
-        error: 'Start date must be before end date'
-      });
-    }
-
-    // Validate dates are not in the past (optional business rule)
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    if (startDate < today) {
-      return res.status(400).json({
-        success: false,
-        error: 'Start date cannot be in the past'
+        error: overlapValidation.errors[0] || 'Trip overlaps with existing trips',
+        details: overlapValidation.errors,
+        overlappingTrips: overlapValidation.overlappingTrips
       });
     }
 
@@ -197,51 +172,47 @@ router.put('/:id', async (req, res) => {
       });
     }
 
-    // Prepare updates object
-    const updates = {};
+    // Prepare updates object with existing values as fallbacks
+    const updatedTripData = {
+      country: country !== undefined ? country : existingTrip.country,
+      start_date: start_date !== undefined ? start_date : existingTrip.start_date,
+      end_date: end_date !== undefined ? end_date : existingTrip.end_date
+    };
+
+    // Basic validation
+    const basicValidation = validateTripData(updatedTripData);
+    if (!basicValidation.isValid) {
+      return res.status(400).json({
+        success: false,
+        error: basicValidation.errors[0] || 'Validation failed',
+        details: basicValidation.errors
+      });
+    }
+
+    // Get existing trips for overlap validation (excluding current trip)
+    const existingTrips = await listTripsByUser(userId);
     
-    if (country !== undefined) {
-      if (!/^[A-Z]{3}$/.test(country)) {
-        return res.status(400).json({
-          success: false,
-          error: 'Country must be a 3-letter ISO code (e.g., FRA, USA, GBR)'
-        });
-      }
-      updates.country = country;
+    // Check for overlaps
+    const overlapValidation = validateTripOverlap(
+      updatedTripData, 
+      existingTrips, 
+      tripId
+    );
+    
+    if (!overlapValidation.isValid) {
+      return res.status(400).json({
+        success: false,
+        error: overlapValidation.errors[0] || 'Trip overlaps with existing trips',
+        details: overlapValidation.errors,
+        overlappingTrips: overlapValidation.overlappingTrips
+      });
     }
 
-    if (start_date !== undefined) {
-      if (!/^\d{4}-\d{2}-\d{2}$/.test(start_date)) {
-        return res.status(400).json({
-          success: false,
-          error: 'Start date must be in YYYY-MM-DD format'
-        });
-      }
-      updates.start_date = start_date;
-    }
-
-    if (end_date !== undefined) {
-      if (!/^\d{4}-\d{2}-\d{2}$/.test(end_date)) {
-        return res.status(400).json({
-          success: false,
-          error: 'End date must be in YYYY-MM-DD format'
-        });
-      }
-      updates.end_date = end_date;
-    }
-
-    // Validate date logic if both dates are provided
-    if (updates.start_date && updates.end_date) {
-      const startDate = new Date(updates.start_date);
-      const endDate = new Date(updates.end_date);
-      
-      if (startDate >= endDate) {
-        return res.status(400).json({
-          success: false,
-          error: 'Start date must be before end date'
-        });
-      }
-    }
+    // Prepare updates object for database
+    const updates = {};
+    if (country !== undefined) updates.country = country;
+    if (start_date !== undefined) updates.start_date = start_date;
+    if (end_date !== undefined) updates.end_date = end_date;
 
     // Update trip
     const result = await updateTrip(tripId, userId, updates);

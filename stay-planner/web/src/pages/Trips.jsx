@@ -218,6 +218,7 @@ const Trips = () => {
               onCancel={handleCloseForm}
               initialData={editingTrip}
               isEditing={!!editingTrip}
+              existingTrips={trips}
             />
           </ModalContent>
         </Modal>

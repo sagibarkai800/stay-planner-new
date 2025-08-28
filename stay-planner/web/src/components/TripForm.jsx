@@ -1,7 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import styled from '@emotion/styled';
 import { Button, Input, Select, Card, FormGroup, Label } from '../styles/common';
 import { Plus, Calendar } from 'lucide-react';
+import { validateTripData, validateTripOverlap, formatOverlapError, getCountryName } from '../utils/validation';
+import ErrorDisplay from './ErrorDisplay';
 
 const FormContainer = styled(Card)`
   max-width: 600px;
@@ -49,6 +51,16 @@ const ErrorText = styled.div`
   margin-top: 0.5rem;
 `;
 
+const OverlapDetails = styled.div`
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+  border: 2px solid #fbbf24;
+  border-radius: 0.75rem;
+  padding: 0.75rem;
+  margin-top: 0.5rem;
+  font-size: 0.875rem;
+  color: #92400e;
+`;
+
 // List of Schengen countries
 const SCHENGEN_COUNTRIES = [
   { code: 'AUT', name: 'Austria' },
@@ -79,52 +91,51 @@ const SCHENGEN_COUNTRIES = [
   { code: 'CHE', name: 'Switzerland' }
 ];
 
-const TripForm = ({ onSubmit, onCancel, initialData = null, isEditing = false }) => {
+const TripForm = ({ onSubmit, onCancel, initialData = null, isEditing = false, existingTrips = [] }) => {
   const [formData, setFormData] = useState({
     country: initialData?.country || '',
     start_date: initialData?.start_date || '',
     end_date: initialData?.end_date || ''
   });
   
-  const [errors, setErrors] = useState({});
+  const [errors, setErrors] = useState([]);
+  const [overlapErrors, setOverlapErrors] = useState([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Clear errors when form data changes
+  useEffect(() => {
+    if (errors.length > 0 || overlapErrors.length > 0) {
+      validateForm();
+    }
+  }, [formData.country, formData.start_date, formData.end_date]);
+
   const validateForm = () => {
-    const newErrors = {};
+    const validationErrors = [];
+    let overlapValidation = { isValid: true, errors: [], overlappingTrips: [] };
     
-    if (!formData.country) {
-      newErrors.country = 'Country is required';
+    // Basic validation
+    const basicValidation = validateTripData(formData);
+    if (!basicValidation.isValid) {
+      validationErrors.push(...basicValidation.errors);
     }
     
-    if (!formData.start_date) {
-      newErrors.start_date = 'Start date is required';
-    }
-    
-    if (!formData.end_date) {
-      newErrors.end_date = 'End date is required';
-    }
-    
-    if (formData.start_date && formData.end_date) {
-      const startDate = new Date(formData.start_date);
-      const endDate = new Date(formData.end_date);
-      const today = new Date();
-      today.setHours(0, 0, 0, 0); // Reset time to start of day
+    // Overlap validation (only if we have country and dates)
+    if (formData.country && formData.start_date && formData.end_date && basicValidation.isValid) {
+      overlapValidation = validateTripOverlap(
+        formData, 
+        existingTrips, 
+        isEditing ? initialData?.id : null
+      );
       
-      if (startDate >= endDate) {
-        newErrors.end_date = 'End date must be after start date';
-      }
-      
-      if (startDate < today) {
-        newErrors.start_date = 'Start date cannot be in the past';
-      }
-      
-      if (endDate < today) {
-        newErrors.end_date = 'End date cannot be in the past';
+      if (!overlapValidation.isValid) {
+        validationErrors.push(...overlapValidation.errors);
       }
     }
     
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    setErrors(validationErrors);
+    setOverlapErrors(overlapValidation.overlappingTrips);
+    
+    return validationErrors.length === 0;
   };
 
   const handleSubmit = async (e) => {
@@ -144,7 +155,8 @@ const TripForm = ({ onSubmit, onCancel, initialData = null, isEditing = false })
         start_date: '',
         end_date: ''
       });
-      setErrors({});
+      setErrors([]);
+      setOverlapErrors([]);
     } catch (error) {
       console.error('Form submission error:', error);
     } finally {
@@ -154,11 +166,11 @@ const TripForm = ({ onSubmit, onCancel, initialData = null, isEditing = false })
 
   const handleInputChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
-    
-    // Clear error when user starts typing
-    if (errors[field]) {
-      setErrors(prev => ({ ...prev, [field]: '' }));
-    }
+  };
+
+  const clearErrors = () => {
+    setErrors([]);
+    setOverlapErrors([]);
   };
 
   return (
@@ -170,6 +182,46 @@ const TripForm = ({ onSubmit, onCancel, initialData = null, isEditing = false })
         </FormTitle>
       </FormHeader>
       
+      {/* Display validation errors */}
+      <ErrorDisplay 
+        errors={errors} 
+        onClose={clearErrors}
+        showCloseButton={true}
+      />
+      
+      {/* Display overlap details */}
+      {overlapErrors.length > 0 && (
+        <OverlapDetails>
+          {overlapErrors.some(trip => trip.sameDates) ? (
+            <>
+              <strong>⚠️ Same Date Conflict:</strong>
+              <p style={{ margin: '0.5rem 0', color: '#dc2626' }}>
+                You cannot have multiple trips on the exact same dates. This would mean being in multiple places at once!
+              </p>
+              <strong>Conflicting trips:</strong>
+              <ul style={{ margin: '0.5rem 0 0 1rem', padding: 0 }}>
+                {overlapErrors.filter(trip => trip.sameDates).map((overlap, index) => (
+                  <li key={index}>
+                    {getCountryName(overlap.country)}: {overlap.start_date} to {overlap.end_date}
+                  </li>
+                ))}
+              </ul>
+            </>
+          ) : (
+            <>
+              <strong>⚠️ Date Overlap Conflicts:</strong>
+              <ul style={{ margin: '0.5rem 0 0 1rem', padding: 0 }}>
+                {overlapErrors.map((overlap, index) => (
+                  <li key={index}>
+                    {formatOverlapError(overlap, getCountryName(overlap.country))}
+                  </li>
+                ))}
+              </ul>
+            </>
+          )}
+        </OverlapDetails>
+      )}
+      
       <form onSubmit={handleSubmit}>
         <FormGroup>
           <Label htmlFor="country">Country *</Label>
@@ -177,7 +229,7 @@ const TripForm = ({ onSubmit, onCancel, initialData = null, isEditing = false })
             id="country"
             value={formData.country}
             onChange={(e) => handleInputChange('country', e.target.value)}
-            error={!!errors.country}
+            error={errors.some(e => e.includes('Country'))}
           >
             <option value="">Select a country</option>
             {SCHENGEN_COUNTRIES.map(country => (
@@ -186,7 +238,6 @@ const TripForm = ({ onSubmit, onCancel, initialData = null, isEditing = false })
               </option>
             ))}
           </Select>
-          {errors.country && <ErrorText>{errors.country}</ErrorText>}
         </FormGroup>
         
         <FormRow>
@@ -197,10 +248,9 @@ const TripForm = ({ onSubmit, onCancel, initialData = null, isEditing = false })
               id="start_date"
               value={formData.start_date}
               onChange={(e) => handleInputChange('start_date', e.target.value)}
-              error={!!errors.start_date}
+              error={errors.some(e => e.includes('start date') || e.includes('Start date'))}
               min={new Date().toISOString().split('T')[0]}
             />
-            {errors.start_date && <ErrorText>{errors.start_date}</ErrorText>}
           </FormGroup>
           
           <FormGroup>
@@ -210,12 +260,26 @@ const TripForm = ({ onSubmit, onCancel, initialData = null, isEditing = false })
               id="end_date"
               value={formData.end_date}
               onChange={(e) => handleInputChange('end_date', e.target.value)}
-              error={!!errors.end_date}
+              error={errors.some(e => e.includes('end date') || e.includes('End date'))}
               min={formData.start_date || new Date().toISOString().split('T')[0]}
             />
-            {errors.end_date && <ErrorText>{errors.end_date}</ErrorText>}
           </FormGroup>
         </FormRow>
+        
+        {/* Helpful tip about same-day travel */}
+        <div style={{ 
+          background: 'linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%)', 
+          border: '2px solid #0ea5e9', 
+          borderRadius: '0.75rem', 
+          padding: '0.75rem', 
+          marginTop: '1rem',
+          fontSize: '0.875rem',
+          color: '#0369a1'
+        }}>
+          <strong>💡 Travel Tip:</strong> You can plan trips that start on the same day another trip ends 
+          (e.g., fly from France to Italy on the same day). The system will automatically handle the 
+          Schengen day counting correctly.
+        </div>
         
         <ButtonGroup>
           {onCancel && (
@@ -223,7 +287,7 @@ const TripForm = ({ onSubmit, onCancel, initialData = null, isEditing = false })
               Cancel
             </Button>
           )}
-          <Button type="submit" disabled={isSubmitting}>
+          <Button type="submit" disabled={isSubmitting || errors.length > 0}>
             {isSubmitting ? (
               'Saving...'
             ) : (
