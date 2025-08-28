@@ -12,6 +12,7 @@ const tripsRoutes = require('./routes/trips');
 const calcsRoutes = require('./routes/calcs');
 const docsRoutes = require('./routes/docs');
 const staysRoutes = require('./routes/stays');
+const telemetryRoutes = require('./routes/telemetry');
 const { requireAuth } = require('./middleware/auth');
 const { initSchengenAlerts } = require('./cron/schengenAlerts');
 const { 
@@ -170,6 +171,9 @@ app.use('/api/docs', docsRoutes);
 // Stays routes (require authentication)
 app.use('/api/stays', staysRoutes);
 
+// Telemetry routes (require authentication)
+app.use('/api/telemetry', telemetryRoutes);
+
 // Protected route example
 app.get('/api/protected', requireAuth, (req, res) => {
   res.json({ 
@@ -200,6 +204,7 @@ app.listen(PORT, () => {
   console.log(`🧮 Calculations endpoints: http://localhost:4000/api/calcs`);
   console.log(`📄 Documents endpoints: http://localhost:4000/api/docs`);
   console.log(`🏨 Stays endpoints: http://localhost:4000/api/stays`);
+  console.log(`📊 Telemetry endpoints: http://localhost:4000/api/telemetry`);
   
   // Initialize cron jobs
   initSchengenAlerts();

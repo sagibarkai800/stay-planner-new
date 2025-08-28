@@ -1,6 +1,7 @@
 const express = require('express');
 const { buildBookingUrl } = require('../services/bookingLinks');
 const { buildAirbnbUrl } = require('../services/airbnbLinks');
+const telemetry = require('../services/telemetry');
 
 const router = express.Router();
 
@@ -126,6 +127,18 @@ router.post('/links', (req, res) => {
     console.log('🔍 Final response:', response);
     console.log('🔍 Response JSON string:', JSON.stringify(response));
     
+    // Log telemetry event
+    const mockMode = !process.env.BOOKING_AFFILIATE_ID;
+    const userId = req.user?.id || null;
+    telemetry.logStaysLinks({
+      destination: destinationParam,
+      checkin,
+      checkout,
+      adults,
+      hasCoordinates: !!(lat && lng),
+      airbnbEnabled: !!airbnbUrl
+    }, userId, mockMode);
+    
     // Ensure we're sending valid JSON
     try {
       res.setHeader('Access-Control-Allow-Origin', req.headers.origin || '*');
@@ -152,6 +165,10 @@ router.post('/links', (req, res) => {
 // Add a test endpoint to verify the route is working
 router.get('/test', (req, res) => {
   console.log('🔍 Stays test endpoint called');
+  
+  // Log telemetry event
+  telemetry.logUIEvent('stays_test_endpoint', {}, null);
+  
   res.json({ 
     message: 'Stays API is working!',
     timestamp: new Date().toISOString(),

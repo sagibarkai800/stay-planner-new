@@ -1,9 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import styled from '@emotion/styled';
-import { MapPin, Calendar, Users, Search, ExternalLink } from 'lucide-react';
+import { MapPin, Calendar, Users, Search, ExternalLink, Plane, Info } from 'lucide-react';
+import { getCountryName } from '../utils/validation';
 import { DayPicker } from 'react-day-picker';
 import 'react-day-picker/dist/style.css';
+import telemetry from '../services/telemetry';
 import { Input as BaseInput, Select as BaseSelect, Button, Badge } from '../styles/common';
+import TelemetryDebug from '../components/TelemetryDebug';
 
 // Custom component wrappers
 const CustomInput = ({ icon, ...props }) => (
@@ -220,10 +223,80 @@ const LoadingSpinner = styled.div`
   border-radius: 50%;
   border-top-color: var(--color-primary);
   animation: spin 1s ease-in-out infinite;
-  
+
   @keyframes spin {
     to { transform: rotate(360deg); }
   }
+`;
+
+const UpcomingTripCard = styled.div`
+  background: linear-gradient(135deg, var(--color-primary-light) 0%, var(--color-primary) 100%);
+  border-radius: var(--radius-xl);
+  padding: var(--spacing-4);
+  margin-bottom: var(--spacing-6);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: white;
+  box-shadow: var(--shadow-md);
+`;
+
+const UpcomingTripContent = styled.div`
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-3);
+`;
+
+const UpcomingTripTitle = styled.div`
+  font-weight: var(--font-weight-semibold);
+  font-size: var(--font-size-base);
+`;
+
+const UpcomingTripDates = styled.div`
+  font-size: var(--font-size-sm);
+  opacity: 0.9;
+`;
+
+const UseTripButton = styled(Button)`
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: white;
+  
+  &:hover {
+    background: rgba(255, 255, 255, 0.3);
+    border-color: rgba(255, 255, 255, 0.4);
+  }
+  
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+`;
+
+const LegalNotices = styled.div`
+  margin-top: var(--spacing-6);
+  padding: var(--spacing-4);
+  background: var(--color-surface-light);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--color-border);
+`;
+
+const NoticeItem = styled.div`
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-2);
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+  margin-bottom: var(--spacing-2);
+  
+  &:last-child {
+    margin-bottom: 0;
+  }
+`;
+
+const InfoIcon = styled(Info)`
+  color: var(--color-primary);
+  flex-shrink: 0;
 `;
 
 const FindStays = () => {
@@ -236,21 +309,59 @@ const FindStays = () => {
     lng: ''
   });
   
-  const [searchResults, setSearchResults] = useState(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState(null);
-  const [showCheckinPicker, setShowCheckinPicker] = useState(false);
-  const [showCheckoutPicker, setShowCheckoutPicker] = useState(false);
+           const [searchResults, setSearchResults] = useState(null);
+         const [isLoading, setIsLoading] = useState(false);
+         const [error, setError] = useState(null);
+         const [showCheckinPicker, setShowCheckinPicker] = useState(false);
+         const [showCheckoutPicker, setShowCheckoutPicker] = useState(false);
+         const [upcomingTrip, setUpcomingTrip] = useState(null);
+         const [isLoadingTrips, setIsLoadingTrips] = useState(false);
 
-  // Adults options
-  const adultsOptions = [
-    { value: '1', label: '1 Adult' },
-    { value: '2', label: '2 Adults' },
-    { value: '3', label: '3 Adults' },
-    { value: '4', label: '4 Adults' },
-    { value: '5', label: '5 Adults' },
-    { value: '6', label: '6 Adults' }
-  ];
+           // Adults options
+         const adultsOptions = [
+           { value: '1', label: '1 Adult' },
+           { value: '2', label: '2 Adults' },
+           { value: '3', label: '3 Adults' },
+           { value: '4', label: '4 Adults' },
+           { value: '5', label: '5 Adults' },
+           { value: '6', label: '6 Adults' }
+         ];
+
+         // Fetch upcoming trips on component mount
+         useEffect(() => {
+           // Log page view
+           telemetry.logPageView('find_stays', {});
+           
+           const fetchUpcomingTrip = async () => {
+             try {
+               setIsLoadingTrips(true);
+               const response = await fetch('/api/trips', {
+                 credentials: 'include'
+               });
+               
+               if (response.ok) {
+                 const data = await response.json();
+                 if (data.success && data.trips.length > 0) {
+                   // Find the next upcoming trip
+                   const now = new Date();
+                   const upcomingTrips = data.trips
+                     .filter(trip => new Date(trip.start_date) > now)
+                     .sort((a, b) => new Date(a.start_date) - new Date(b.start_date));
+                   
+                   if (upcomingTrips.length > 0) {
+                     setUpcomingTrip(upcomingTrips[0]);
+                   }
+                 }
+               }
+             } catch (error) {
+               console.log('No trips found or user not logged in');
+             } finally {
+               setIsLoadingTrips(false);
+             }
+           };
+           
+           fetchUpcomingTrip();
+         }, []);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -281,6 +392,15 @@ const FindStays = () => {
            e.preventDefault();
            setError(null);
            setIsLoading(true);
+           
+           // Log telemetry
+           telemetry.logFormSubmit('accommodation_search', {
+             destination: formData.destination,
+             checkin: formData.checkin,
+             checkout: formData.checkout,
+             adults: formData.adults,
+             hasCoordinates: !!(formData.lat && formData.lng)
+           });
            
            try {
              console.log('🔍 Frontend: Submitting form data:', formData);
@@ -317,19 +437,87 @@ const FindStays = () => {
            } catch (error) {
              console.error('🔍 Frontend: Error in handleSubmit:', error);
              setError(error.message);
+             
+             // Log error telemetry
+             telemetry.logError('accommodation_search_failed', {
+               error: error.message,
+               destination: formData.destination
+             });
            } finally {
              setIsLoading(false);
            }
          };
 
-  const openUrl = (url) => {
-    window.open(url, '_blank');
-  };
+           const openUrl = (url) => {
+           // Log telemetry
+           const provider = url.includes('booking.com') ? 'booking' : 
+                           url.includes('airbnb') ? 'airbnb' : 'unknown';
+           telemetry.logExternalLink(provider, { url: url.substring(0, 100) });
+           
+           window.open(url, '_blank', 'noopener,noreferrer');
+         };
 
-  return (
-    <div>
-      <SearchForm onSubmit={handleSubmit}>
-        <FormTitle>Find Accommodation</FormTitle>
+         const useUpcomingTrip = () => {
+           if (upcomingTrip) {
+             setFormData({
+               destination: getCountryName(upcomingTrip.country),
+               checkin: upcomingTrip.start_date,
+               checkout: upcomingTrip.end_date,
+               adults: '2',
+               lat: '',
+               lng: ''
+             });
+             
+             // Log telemetry
+             telemetry.logButtonClick('use_upcoming_trip', {
+               tripId: upcomingTrip.id,
+               country: upcomingTrip.country,
+               startDate: upcomingTrip.start_date,
+               endDate: upcomingTrip.end_date
+             });
+           }
+         };
+
+         return (
+           <div>
+             {/* Upcoming Trip Action */}
+             {upcomingTrip && (
+               <UpcomingTripCard>
+                 <UpcomingTripContent>
+                   <Plane size={20} />
+                   <div>
+                     <UpcomingTripTitle>Next Trip: {getCountryName(upcomingTrip.country)}</UpcomingTripTitle>
+                     <UpcomingTripDates>{upcomingTrip.start_date} to {upcomingTrip.end_date}</UpcomingTripDates>
+                   </div>
+                 </UpcomingTripContent>
+                 <UseTripButton 
+                   type="button" 
+                   variant="secondary" 
+                   onClick={useUpcomingTrip}
+                   disabled={isLoadingTrips}
+                 >
+                   {isLoadingTrips ? 'Loading...' : 'Use This Trip'}
+                 </UseTripButton>
+               </UpcomingTripCard>
+             )}
+             
+             {!isLoadingTrips && !upcomingTrip && (
+               <div style={{
+                 background: 'var(--color-surface-light)',
+                 border: '1px solid var(--color-border)',
+                 borderRadius: 'var(--radius-lg)',
+                 padding: 'var(--spacing-4)',
+                 marginBottom: 'var(--spacing-6)',
+                 textAlign: 'center',
+                 color: 'var(--color-text-secondary)',
+                 fontSize: 'var(--font-size-sm)'
+               }}>
+                 💡 <strong>Tip:</strong> Add trips to your planner to quickly pre-fill accommodation searches
+               </div>
+             )}
+               
+             <SearchForm onSubmit={handleSubmit}>
+             <FormTitle>Find Accommodation</FormTitle>
         
         {error && <ErrorMessage>{error}</ErrorMessage>}
         
@@ -426,30 +614,36 @@ const FindStays = () => {
                </SubmitButton>
                
                <div style={{ marginTop: 'var(--spacing-4)', textAlign: 'center' }}>
-                 <Button 
-                   type="button" 
-                   variant="secondary" 
-                   onClick={async () => {
-                     try {
-                       console.log('🔍 Testing stays API endpoint...');
-                       const response = await fetch('/api/stays/test');
-                       const data = await response.json();
-                       console.log('🔍 Test response:', data);
-                       alert('API Test: ' + JSON.stringify(data, null, 2));
-                     } catch (error) {
-                       console.error('🔍 Test failed:', error);
-                       alert('API Test failed: ' + error.message);
-                     }
-                   }}
-                 >
-                   Test API Endpoint
-                 </Button>
+                          <Button
+           type="button"
+           variant="secondary"
+           onClick={async () => {
+             // Log telemetry
+             telemetry.logButtonClick('test_api_endpoint', { endpoint: '/api/stays/test' });
+             
+             try {
+               console.log('🔍 Testing stays API endpoint...');
+               const response = await fetch('/api/stays/test');
+               const data = await response.json();
+               console.log('🔍 Test response:', data);
+               alert('API Test: ' + JSON.stringify(data, null, 2));
+             } catch (error) {
+               console.error('🔍 Test failed:', error);
+               alert('API Test failed: ' + error.message);
+             }
+           }}
+         >
+           Test API Endpoint
+         </Button>
                  
                  <Button 
                    type="button" 
                    variant="secondary" 
                    style={{ marginLeft: 'var(--spacing-3)' }}
                    onClick={async () => {
+                     // Log telemetry
+                     telemetry.logButtonClick('test_post_request', { endpoint: '/api/stays/links' });
+                     
                      try {
                        console.log('🔍 Testing stays API with POST...');
                        const testData = {
@@ -490,7 +684,7 @@ const FindStays = () => {
                    Test POST Request
                  </Button>
                </div>
-      </SearchForm>
+             </SearchForm>
 
       {searchResults && (
         <ResultsSection>
@@ -501,42 +695,57 @@ const FindStays = () => {
             </ResultsSubtitle>
           </ResultsHeader>
           
-          <CardsGrid>
-            <PrimaryCard>
-              <CardIcon>
-                <MapPin size={24} />
-              </CardIcon>
-              <CardTitle>Search on Booking.com</CardTitle>
-              <CardDescription>
-                Find hotels, apartments, and vacation rentals with our affiliate partnership
-              </CardDescription>
-              {searchResults.bookingUrl && searchResults.bookingUrl.includes('aid=DEMO') && (
-                <Badge style={{ marginBottom: 'var(--spacing-3)' }}>Demo Mode</Badge>
-              )}
-              <CardButton onClick={() => openUrl(searchResults.bookingUrl)}>
-                <ExternalLink size={18} />
-                Search on Booking.com
-              </CardButton>
-            </PrimaryCard>
-            
-            {searchResults.airbnbUrl && (
-              <SecondaryCard>
-                <CardIcon>
-                  <MapPin size={24} />
-                </CardIcon>
-                <CardTitle>Open on Airbnb</CardTitle>
-                <CardDescription>
-                  Explore unique stays and local experiences
-                </CardDescription>
-                <CardButton onClick={() => openUrl(searchResults.airbnbUrl)}>
-                  <ExternalLink size={18} />
-                  Open on Airbnb
-                </CardButton>
-              </SecondaryCard>
-            )}
-          </CardsGrid>
+                           <CardsGrid>
+                   <PrimaryCard>
+                     <CardIcon>
+                       <MapPin size={24} />
+                     </CardIcon>
+                     <CardTitle>Search on Booking.com</CardTitle>
+                     <CardDescription>
+                       Find hotels, apartments, and vacation rentals with our affiliate partnership
+                     </CardDescription>
+                     {searchResults.bookingUrl && searchResults.bookingUrl.includes('aid=DEMO') && (
+                       <Badge style={{ marginBottom: 'var(--spacing-3)' }}>Demo Mode</Badge>
+                     )}
+                     <CardButton onClick={() => openUrl(searchResults.bookingUrl)}>
+                       <ExternalLink size={18} />
+                       Search on Booking.com
+                     </CardButton>
+                   </PrimaryCard>
+
+                   {searchResults.airbnbUrl && (
+                     <SecondaryCard>
+                       <CardIcon>
+                         <MapPin size={24} />
+                       </CardIcon>
+                       <CardTitle>Open on Airbnb</CardTitle>
+                       <CardDescription>
+                         Explore unique stays and local experiences
+                       </CardDescription>
+                       <CardButton onClick={() => openUrl(searchResults.airbnbUrl)}>
+                         <ExternalLink size={18} />
+                         Open on Airbnb
+                       </CardButton>
+                     </SecondaryCard>
+                   )}
+                 </CardsGrid>
+
+                 {/* Legal Notices */}
+                 <LegalNotices>
+                   <NoticeItem>
+                     <InfoIcon size={16} />
+                     <span>Prices and availability are provided by partners and may change at checkout.</span>
+                   </NoticeItem>
+                   <NoticeItem>
+                     <InfoIcon size={16} />
+                     <span>We may earn an affiliate commission.</span>
+                   </NoticeItem>
+                 </LegalNotices>
         </ResultsSection>
       )}
+      
+      {/* Telemetry Debug Component */}
+      <TelemetryDebug />
     </div>
   );
 };
