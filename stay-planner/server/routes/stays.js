@@ -12,6 +12,7 @@ const router = express.Router();
  */
 router.post('/links', (req, res) => {
   try {
+    console.log('🔍 Stays API called with body:', req.body);
     const { destination, checkin, checkout, adults, lat, lng } = req.body;
     
     // Validate required parameters
