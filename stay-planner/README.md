@@ -83,6 +83,7 @@ npm run dev:web
 ### Server
 - `npm run dev` - Start server with nodemon (auto-restart on changes)
 - `npm start` - Start server in production mode
+- `npm run smoke` - Run comprehensive server health checks
 - `npm run lint` - Run ESLint to check code quality
 - `npm run lint:fix` - Fix ESLint issues automatically
 - `npm run format` - Format code with Prettier
@@ -124,23 +125,35 @@ CORS_ORIGIN=http://localhost:5173
 
 # Flight Search Provider
 PROVIDER_FLIGHTS=skyscanner
-SKYSCANNER_API_KEY=your-skyscanner-api-key-here
+# Leave empty for mock mode, or get from Skyscanner Partner Program
+SKYSCANNER_API_KEY=
 
 # Accommodation Booking
-BOOKING_AFFILIATE_ID=your-booking-affiliate-id
+# Get from Booking.com Affiliate Program
+BOOKING_AFFILIATE_ID=
 BOOKING_AID_PARAM=aid
 
-# Airbnb Deep Links
+# Airbnb Deep Links (no API key needed)
 AIRBNB_ENABLE_DEEPLINKS=true
 ```
 
 ### Provider Configuration
 
-- **Flights**: Currently supports Skyscanner. Set `SKYSCANNER_API_KEY` for live data, or run in mock mode.
-- **Accommodations**: Booking.com affiliate integration with `BOOKING_AFFILIATE_ID`.
-- **Airbnb**: Deep link support when `AIRBNB_ENABLE_DEEPLINKS=true`.
+#### Flight Search (Skyscanner)
+- **Live Mode**: Set `SKYSCANNER_API_KEY` for real-time flight data
+- **Mock Mode**: Leave `SKYSCANNER_API_KEY` empty to run with sample data
+- **Getting API Key**: Apply to the [Skyscanner Partner Program](https://www.partners.skyscanner.net/)
 
-See `server/env.example` for complete configuration options.
+#### Accommodation (Booking.com)
+- **Affiliate Integration**: Set `BOOKING_AFFILIATE_ID` from the [Booking.com Affiliate Program](https://www.booking.com/content/index.html)
+- **Fallback**: Works without affiliate ID (demo mode)
+
+#### Airbnb Integration
+- **Deep Links Only**: No API key needed, generates search URLs
+- **Why Deep Links**: Airbnb doesn't provide public accommodation search APIs
+- **Enable/Disable**: Control with `AIRBNB_ENABLE_DEEPLINKS`
+
+See `server/.env.example` for complete configuration options.
 
 ## Code Quality
 
@@ -167,6 +180,34 @@ npm run build
 # Start the production server
 npm start
 ```
+
+## Testing
+
+### Server Smoke Tests
+
+Run comprehensive health checks on all API endpoints:
+
+```bash
+# From root directory
+npm run smoke
+
+# From server directory
+npm run smoke
+```
+
+The smoke test covers:
+- Health checks
+- Database connectivity
+- Provider status
+- Feature flags
+- Flight search (mock mode)
+- Flight redirects
+- Accommodation links
+- Telemetry system
+
+Exit codes:
+- `0` - All tests passed, server is healthy
+- `1` - Some tests failed, server may have issues
 
 ## Contributing
 

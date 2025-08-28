@@ -9,6 +9,7 @@
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "format": "prettier --write .",
+    "smoke": "node smoke.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [

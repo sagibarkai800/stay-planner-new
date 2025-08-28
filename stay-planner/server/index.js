@@ -87,6 +87,12 @@ app.get('/api/providers/status', (req, res) => {
   });
 });
 
+// Feature flags endpoint
+app.get('/api/features/status', (req, res) => {
+  const { getFeatureStatus } = require('./config/flags');
+  res.json(getFeatureStatus());
+});
+
 // Status endpoint for today's Schengen status
 app.get('/api/status/today', requireAuth, (req, res) => {
   try {

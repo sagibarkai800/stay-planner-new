@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import styled from '@emotion/styled';
 import { MapPin, Calendar, Users, Search, ExternalLink, Plane, Info } from 'lucide-react';
 import { getCountryName } from '../utils/validation';
+import { validateRequiredFields, validateNumericRange, isValidDateRange } from '../utils/shared';
 import { DayPicker } from 'react-day-picker';
 import 'react-day-picker/dist/style.css';
 import telemetry from '../services/telemetry';

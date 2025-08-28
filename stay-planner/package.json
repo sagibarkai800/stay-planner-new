@@ -9,7 +9,8 @@
     "dev:web": "cd web && npm run dev",
     "install-all": "npm install && cd server && npm install && cd ../web && npm install",
     "build": "cd web && npm run build",
-    "start": "cd server && npm start"
+    "start": "cd server && npm start",
+    "smoke": "cd server && npm run smoke"
   },
   "keywords": ["stay-planner", "full-stack", "nodejs", "express", "react", "vite"],
   "author": "",

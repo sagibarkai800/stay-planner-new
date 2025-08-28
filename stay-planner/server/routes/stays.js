@@ -2,6 +2,13 @@ const express = require('express');
 const { buildBookingUrl } = require('../services/bookingLinks');
 const { buildAirbnbUrl } = require('../services/airbnbLinks');
 const telemetry = require('../services/telemetry');
+const { 
+  parseDate, 
+  validateRequiredFields, 
+  validateNumericRange, 
+  createErrorResponse, 
+  createSuccessResponse 
+} = require('../utils/shared');
 
 const router = express.Router();
 
@@ -23,46 +30,42 @@ router.post('/links', (req, res) => {
     const { destination, checkin, checkout, adults, lat, lng } = req.body;
     
     // Validate required parameters
+    const requiredFields = ['checkin', 'checkout', 'adults'];
     if (!destination && !(lat && lng)) {
-      return res.status(400).json({
-        error: 'Destination (city name) or coordinates (lat, lng) are required'
-      });
+      requiredFields.push('destination');
     }
     
-    if (!checkin || !checkout) {
-      return res.status(400).json({
-        error: 'Check-in and check-out dates are required'
-      });
+    const validation = validateRequiredFields(req.body, requiredFields);
+    if (!validation.isValid) {
+      return res.status(400).json(createErrorResponse(
+        'Missing required fields',
+        400,
+        { missingFields: validation.errors }
+      ));
     }
     
-    if (!adults || adults < 1 || adults > 20) {
-      return res.status(400).json({
-        error: 'Valid number of adults (1-20) is required'
-      });
+    // Validate adults
+    const adultsValidation = validateNumericRange(adults, 1, 20, 'Adults');
+    if (!adultsValidation.isValid) {
+      return res.status(400).json(createErrorResponse(adultsValidation.error));
     }
     
     // Validate dates
-    const checkinDate = new Date(checkin);
-    const checkoutDate = new Date(checkout);
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    
-    if (isNaN(checkinDate.getTime()) || isNaN(checkoutDate.getTime())) {
-      return res.status(400).json({
-        error: 'Invalid date format. Use YYYY-MM-DD'
-      });
-    }
-    
-    if (checkinDate < today) {
-      return res.status(400).json({
-        error: 'Check-in date cannot be in the past'
-      });
-    }
-    
-    if (checkoutDate <= checkinDate) {
-      return res.status(400).json({
-        error: 'Check-out date must be after check-in date'
-      });
+    try {
+      const checkinDate = parseDate(checkin);
+      const checkoutDate = parseDate(checkout);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      
+      if (checkinDate < today) {
+        return res.status(400).json(createErrorResponse('Check-in date cannot be in the past'));
+      }
+      
+      if (checkoutDate <= checkinDate) {
+        return res.status(400).json(createErrorResponse('Check-out date must be after check-in date'));
+      }
+    } catch (error) {
+      return res.status(400).json(createErrorResponse(error.message));
     }
     
     // Build destination parameter
@@ -97,9 +100,11 @@ router.post('/links', (req, res) => {
       }
     } catch (error) {
       console.error('Error building Booking.com URL:', error);
-      return res.status(500).json({
-        error: 'Failed to generate Booking.com link: ' + error.message
-      });
+      return res.status(500).json(createErrorResponse(
+        'Failed to generate Booking.com link',
+        500,
+        { originalError: error.message }
+      ));
     }
     
     // Generate Airbnb URL (optional)
@@ -154,11 +159,14 @@ router.post('/links', (req, res) => {
   } catch (error) {
     console.error('Error in /api/stays/links:', error);
     console.error('Error stack:', error.stack);
-    res.status(500).json({
-      error: 'Internal server error',
-      message: error.message,
-      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
-    });
+    res.status(500).json(createErrorResponse(
+      'Internal server error',
+      500,
+      { 
+        message: error.message,
+        stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+      }
+    ));
   }
 });
 

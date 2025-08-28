@@ -1,6 +1,7 @@
 const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
+const { createErrorResponse, createSuccessResponse } = require('../utils/shared');
 
 class TelemetryService {
   constructor() {

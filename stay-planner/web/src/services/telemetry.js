@@ -1,3 +1,5 @@
+import { formatDate } from '../utils/shared';
+
 class TelemetryService {
   constructor() {
     this.isDevelopment = import.meta.env.DEV;
@@ -86,7 +88,7 @@ class TelemetryService {
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `telemetry_logs_${new Date().toISOString().split('T')[0]}.json`;
+      a.download = `telemetry_logs_${formatDate(new Date())}.json`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
