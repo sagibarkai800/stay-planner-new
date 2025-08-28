@@ -16,6 +16,8 @@ router.post('/links', (req, res) => {
     console.log('🔍 Request headers:', req.headers);
     console.log('🔍 Request method:', req.method);
     console.log('🔍 Request URL:', req.url);
+    console.log('🔍 Request origin:', req.headers.origin);
+    console.log('🔍 Request user-agent:', req.headers['user-agent']);
     
     const { destination, checkin, checkout, adults, lat, lng } = req.body;
     
@@ -122,7 +124,19 @@ router.post('/links', (req, res) => {
     };
     
     console.log('🔍 Final response:', response);
-    res.json(response);
+    console.log('🔍 Response JSON string:', JSON.stringify(response));
+    
+    // Ensure we're sending valid JSON
+    try {
+      res.setHeader('Access-Control-Allow-Origin', req.headers.origin || '*');
+      res.setHeader('Access-Control-Allow-Credentials', 'true');
+      res.setHeader('Content-Type', 'application/json');
+      res.json(response);
+      console.log('🔍 Response sent successfully');
+    } catch (jsonError) {
+      console.error('🔍 Error sending JSON response:', jsonError);
+      res.status(500).json({ error: 'Failed to send response' });
+    }
     
   } catch (error) {
     console.error('Error in /api/stays/links:', error);

@@ -444,6 +444,51 @@ const FindStays = () => {
                  >
                    Test API Endpoint
                  </Button>
+                 
+                 <Button 
+                   type="button" 
+                   variant="secondary" 
+                   style={{ marginLeft: 'var(--spacing-3)' }}
+                   onClick={async () => {
+                     try {
+                       console.log('🔍 Testing stays API with POST...');
+                       const testData = {
+                         destination: 'Paris',
+                         checkin: '2025-09-01',
+                         checkout: '2025-09-05',
+                         adults: '2'
+                       };
+                       console.log('🔍 Test data:', testData);
+                       
+                       const response = await fetch('/api/stays/links', {
+                         method: 'POST',
+                         headers: {
+                           'Content-Type': 'application/json',
+                         },
+                         body: JSON.stringify(testData),
+                         credentials: 'include'
+                       });
+                       
+                       console.log('🔍 Response status:', response.status);
+                       console.log('🔍 Response headers:', response.headers);
+                       
+                       if (response.ok) {
+                         const data = await response.json();
+                         console.log('🔍 Test POST response:', data);
+                         alert('POST Test Success: ' + JSON.stringify(data, null, 2));
+                       } else {
+                         const errorText = await response.text();
+                         console.log('🔍 Error response text:', errorText);
+                         alert('POST Test Failed: ' + response.status + ' - ' + errorText);
+                       }
+                     } catch (error) {
+                       console.error('🔍 POST test failed:', error);
+                       alert('POST Test failed: ' + error.message);
+                     }
+                   }}
+                 >
+                   Test POST Request
+                 </Button>
                </div>
       </SearchForm>
 
