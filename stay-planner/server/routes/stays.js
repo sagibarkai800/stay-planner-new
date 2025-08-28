@@ -71,16 +71,18 @@ router.post('/links', (req, res) => {
     // Generate Booking.com URL
     let bookingUrl;
     try {
+      console.log('🔍 Building Booking.com URL with:', { destination: destinationParam, checkin, checkout, adults });
       bookingUrl = buildBookingUrl({
         destination: destinationParam,
         checkin,
         checkout,
         adults
       });
+      console.log('🔍 Generated Booking.com URL:', bookingUrl);
     } catch (error) {
       console.error('Error building Booking.com URL:', error);
       return res.status(500).json({
-        error: 'Failed to generate Booking.com link'
+        error: 'Failed to generate Booking.com link: ' + error.message
       });
     }
     
