@@ -10,7 +10,8 @@ import {
   Settings, 
   LogOut,
   User,
-  Bell
+  Bell,
+  Search
 } from 'lucide-react';
 
 const LayoutContainer = styled.div`
@@ -364,6 +365,8 @@ const AppLayout = () => {
     if (path === '/app/trips') return 'Manage Trips';
     if (path === '/app/calendar') return 'Travel Calendar';
     if (path === '/app/docs') return 'Documents';
+    if (path === '/app/find' || path === '/app/find/flights') return 'Find Flights';
+    if (path === '/app/find/stays') return 'Find Stays';
     if (path === '/app/settings') return 'Profile & Settings';
     return 'Dashboard';
   };
@@ -411,6 +414,18 @@ const AppLayout = () => {
               <NavLinkStyled to="/app/docs">
                 <FileText />
                 Documents
+              </NavLinkStyled>
+            </NavItem>
+            <NavItem>
+              <NavLinkStyled to="/app/find/flights">
+                <Search />
+                Find Flights
+              </NavLinkStyled>
+            </NavItem>
+            <NavItem>
+              <NavLinkStyled to="/app/find/stays">
+                <Search />
+                Find Stays
               </NavLinkStyled>
             </NavItem>
             <NavItem>

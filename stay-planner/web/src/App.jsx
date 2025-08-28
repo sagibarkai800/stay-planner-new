@@ -7,6 +7,8 @@ import Dashboard from './pages/Dashboard';
 import Trips from './pages/Trips';
 import Calendar from './pages/Calendar';
 import Documents from './pages/Documents';
+import FindFlights from './pages/FindFlights';
+import FindStays from './pages/FindStays';
 import Profile from './pages/Profile';
 import './index.css';
 
@@ -21,6 +23,11 @@ function App() {
           <Route path="trips" element={<Trips />} />
           <Route path="calendar" element={<Calendar />} />
           <Route path="docs" element={<Documents />} />
+          <Route path="find">
+            <Route index element={<FindFlights />} />
+            <Route path="flights" element={<FindFlights />} />
+            <Route path="stays" element={<FindStays />} />
+          </Route>
           <Route path="settings" element={<Profile />} />
         </Route>
         <Route path="/" element={<Navigate to="/app" replace />} />
