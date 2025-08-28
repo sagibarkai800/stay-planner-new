@@ -115,6 +115,35 @@ export const api = {
       
       return handleResponse(response);
     }
+  },
+  
+  docs: {
+    async list() {
+      const response = await fetch(`${API_BASE}/api/docs`, {
+        credentials: 'include',
+      });
+      
+      return handleResponse(response);
+    },
+    
+    async upload(formData) {
+      const response = await fetch(`${API_BASE}/api/docs`, {
+        method: 'POST',
+        credentials: 'include',
+        body: formData, // Don't set Content-Type for FormData
+      });
+      
+      return handleResponse(response);
+    },
+    
+    async delete(id) {
+      const response = await fetch(`${API_BASE}/api/docs/${id}`, {
+        method: 'DELETE',
+        credentials: 'include',
+      });
+      
+      return handleResponse(response);
+    }
   }
 };
 

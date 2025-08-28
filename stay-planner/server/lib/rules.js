@@ -69,47 +69,170 @@ function daysInRange(trips, start, end, country = null) {
 }
 
 /**
- * Calculate Schengen remaining days using rolling 180-day window (but 90-day limit)
+ * Calculate Schengen remaining days using rolling 180-day window (90-day limit)
  * @param {Array} trips - Array of trip objects with country, start_date, end_date
  * @param {string} referenceDate - Reference date (YYYY-MM-DD) for calculation
  * @returns {Object} {used, remaining, windowStart, windowEnd}
  */
 function schengenRemainingDays(trips, referenceDate) {
   const refDate = new Date(referenceDate);
-  const windowStart = new Date(refDate.getTime() - (179 * 24 * 60 * 60 * 1000)); // 179 days back (180th day is today)
-  const windowEnd = refDate;
   
-  let usedDays = 0;
+  // If no trips, return full 90 days
+  if (!trips || trips.length === 0) {
+    return {
+      used: 0,
+      remaining: 90,
+      windowStart: refDate.toISOString().split('T')[0],
+      windowEnd: refDate.toISOString().split('T')[0]
+    };
+  }
   
-  for (const trip of trips) {
-    // Only count Schengen countries
-    if (!SCHENGEN_COUNTRIES.includes(trip.country)) {
-      continue;
+  // Find the 180-day window that gives the maximum used days
+  let maxUsedDays = 0;
+  let bestWindowStart = null;
+  let bestWindowEnd = null;
+  
+  // Check multiple 180-day windows ending on or before the reference date
+  // We need to check windows that could potentially contain the most used days
+  for (let daysBack = 0; daysBack <= 180; daysBack++) {
+    const windowEnd = new Date(refDate.getTime() - (daysBack * 24 * 60 * 60 * 1000));
+    const windowStart = new Date(windowEnd.getTime() - (179 * 24 * 60 * 60 * 1000)); // 179 days back from window end
+    
+    let usedDaysInWindow = 0;
+    
+    for (const trip of trips) {
+      // Only count Schengen countries
+      if (!SCHENGEN_COUNTRIES.includes(trip.country)) {
+        continue;
+      }
+      
+      const tripStart = new Date(trip.start_date);
+      const tripEnd = new Date(trip.end_date);
+      
+      // Check if trip overlaps with this 180-day window
+      if (tripEnd >= windowStart && tripStart <= windowEnd) {
+        // Calculate overlap
+        const overlapStart = new Date(Math.max(windowStart.getTime(), tripStart.getTime()));
+        const overlapEnd = new Date(Math.min(windowEnd.getTime(), tripEnd.getTime()));
+        
+        if (overlapStart <= overlapEnd) {
+          const daysDiff = Math.ceil((overlapEnd - overlapStart) / (1000 * 60 * 60 * 24)) + 1;
+          usedDaysInWindow += daysDiff;
+        }
+      }
     }
     
-    const tripStart = new Date(trip.start_date);
-    const tripEnd = new Date(trip.end_date);
-    
-    // Check if trip overlaps with the 180-day window
-    if (tripEnd >= windowStart && tripStart <= windowEnd) {
-      // Calculate overlap
-      const overlapStart = new Date(Math.max(windowStart.getTime(), tripStart.getTime()));
-      const overlapEnd = new Date(Math.min(windowEnd.getTime(), tripEnd.getTime()));
-      
-      if (overlapStart <= overlapEnd) {
-        const daysDiff = Math.ceil((overlapEnd - overlapStart) / (1000 * 60 * 60 * 24)) + 1;
-        usedDays += daysDiff;
-      }
+    // Update if this window has more used days
+    if (usedDaysInWindow > maxUsedDays) {
+      maxUsedDays = usedDaysInWindow;
+      bestWindowStart = windowStart;
+      bestWindowEnd = windowEnd;
     }
   }
   
-  const remaining = Math.max(0, 90 - usedDays);
+  // Ensure we have valid window dates (fallback to reference date if needed)
+  if (!bestWindowStart || !bestWindowEnd) {
+    bestWindowStart = refDate;
+    bestWindowEnd = refDate;
+  }
+  
+  const remaining = Math.max(0, 90 - maxUsedDays);
   
   return {
-    used: usedDays,
+    used: maxUsedDays,
     remaining: remaining,
-    windowStart: windowStart.toISOString().split('T')[0],
-    windowEnd: windowEnd.toISOString().split('T')[0]
+    windowStart: bestWindowStart.toISOString().split('T')[0],
+    windowEnd: bestWindowEnd.toISOString().split('T')[0]
+  };
+}
+
+/**
+ * Calculate Schengen availability for future dates (forecasting)
+ * @param {Array} trips - Array of trip objects with country, start_date, end_date
+ * @param {string} startDate - Start date for forecasting (YYYY-MM-DD)
+ * @param {string} endDate - End date for forecasting (YYYY-MM-DD)
+ * @returns {Object} {available, used, remaining, details}
+ */
+function schengenForecast(trips, startDate, endDate) {
+  const start = new Date(startDate);
+  const end = new Date(endDate);
+  
+  let totalUsed = 0;
+  let maxUsedInWindow = 0;
+  const details = [];
+  
+  // Check each day in the forecast period
+  for (let currentDate = new Date(start); currentDate <= end; currentDate.setDate(currentDate.getDate() + 1)) {
+    const dateStr = currentDate.toISOString().split('T')[0];
+    const windowStart = new Date(currentDate.getTime() - (179 * 24 * 60 * 60 * 1000));
+    const windowEnd = currentDate;
+    
+    let usedInWindow = 0;
+    
+    for (const trip of trips) {
+      if (!SCHENGEN_COUNTRIES.includes(trip.country)) {
+        continue;
+      }
+      
+      const tripStart = new Date(trip.start_date);
+      const tripEnd = new Date(trip.end_date);
+      
+      if (tripEnd >= windowStart && tripStart <= windowEnd) {
+        const overlapStart = new Date(Math.max(windowStart.getTime(), tripStart.getTime()));
+        const overlapEnd = new Date(Math.min(windowEnd.getTime(), tripEnd.getTime()));
+        
+        if (overlapStart <= overlapEnd) {
+          const daysDiff = Math.ceil((overlapEnd - overlapStart) / (1000 * 60 * 60 * 24)) + 1;
+          usedInWindow += daysDiff;
+        }
+      }
+    }
+    
+    maxUsedInWindow = Math.max(maxUsedInWindow, usedInWindow);
+    
+    details.push({
+      date: dateStr,
+      used: usedInWindow,
+      remaining: Math.max(0, 90 - usedInWindow)
+    });
+  }
+  
+  return {
+    available: Math.max(0, 90 - maxUsedInWindow),
+    used: maxUsedInWindow,
+    remaining: Math.max(0, 90 - maxUsedInWindow),
+    details: details
+  };
+}
+
+/**
+ * Get Schengen availability for next 1, 3, and 6 months
+ * @param {Array} trips - Array of trip objects
+ * @param {string} referenceDate - Reference date (YYYY-MM-DD)
+ * @returns {Object} {nextMonth, next3Months, next6Months}
+ */
+function schengenAvailabilitySummary(trips, referenceDate) {
+  const refDate = new Date(referenceDate);
+  
+  // Calculate next month (30 days)
+  const nextMonthStart = new Date(refDate);
+  const nextMonthEnd = new Date(refDate);
+  nextMonthEnd.setDate(nextMonthEnd.getDate() + 30);
+  
+  // Calculate next 3 months (90 days)
+  const next3MonthsStart = new Date(refDate);
+  const next3MonthsEnd = new Date(refDate);
+  next3MonthsEnd.setDate(next3MonthsEnd.getDate() + 90);
+  
+  // Calculate next 6 months (180 days)
+  const next6MonthsStart = new Date(refDate);
+  const next6MonthsEnd = new Date(refDate);
+  next6MonthsEnd.setDate(next6MonthsEnd.getDate() + 180);
+  
+  return {
+    nextMonth: schengenForecast(trips, nextMonthStart.toISOString().split('T')[0], nextMonthEnd.toISOString().split('T')[0]),
+    next3Months: schengenForecast(trips, next3MonthsStart.toISOString().split('T')[0], next3MonthsEnd.toISOString().split('T')[0]),
+    next6Months: schengenForecast(trips, next6MonthsStart.toISOString().split('T')[0], next6MonthsEnd.toISOString().split('T')[0])
   };
 }
 
@@ -178,6 +301,8 @@ function isSchengenCountry(countryCode) {
 module.exports = {
   daysInRange,
   schengenRemainingDays,
+  schengenForecast,
+  schengenAvailabilitySummary,
   residency183Status,
   getSchengenCountries,
   isSchengenCountry,

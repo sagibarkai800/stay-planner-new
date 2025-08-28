@@ -1,285 +1,508 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   Card,
   Title,
   Subtitle,
   Text,
   Button,
-  Grid2,
-  Grid3,
   FlexCenter,
   FlexBetween,
-  IconContainer,
-  Icon,
   Spacer,
-  SuccessMessage,
-  InfoMessage,
-  Input,
-  Label,
-  FormGroup,
-  Form
+  Toast
 } from '../styles/common';
 import styled from '@emotion/styled';
 import Breadcrumb from '../components/Breadcrumb';
-import { Upload, FileText, Download, Trash2 } from 'lucide-react';
+import { Upload, FileText, Download, Trash2, Eye, AlertCircle, CheckCircle, X } from 'lucide-react';
+import { api } from '../utils/api';
 
-// Documents-specific styled components
+// Enhanced Documents-specific styled components
 const DocumentsContainer = styled.div`
-  min-height: 100vh;
-  background: linear-gradient(135deg, #E8F4FD 0%, #F0E6FF 50%, #E6F7F0 100%);
+  max-width: 1200px;
+  margin: 0 auto;
   padding: 2rem;
 `;
 
 const HeaderSection = styled.div`
-  text-align: center;
-  margin-bottom: 3rem;
+  margin-bottom: 2rem;
 `;
 
-const PageTitle = styled.h1`
-  font-size: 3rem;
-  font-weight: bold;
-  background: linear-gradient(135deg, #3b82f6, #8b5cf6, #10b981);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  margin-bottom: 1rem;
+const PageTitle = styled(Title)`
+  margin-bottom: 0.5rem;
 `;
 
-const PageSubtitle = styled.p`
-  font-size: 1.25rem;
-  color: #6b7280;
-  max-width: 600px;
-  margin: 0 auto;
+const PageDescription = styled.p`
+  color: var(--color-text-secondary);
+  margin: 0;
+  font-size: var(--font-size-lg);
 `;
 
 const UploadSection = styled(Card)`
-  margin-bottom: 3rem;
-  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
-  border: 2px solid rgba(255, 255, 255, 0.8);
-  box-shadow: 
-    0 20px 25px -5px rgba(0, 0, 0, 0.1),
-    0 10px 10px -5px rgba(0, 0, 0, 0.04),
-    inset 0 1px 0 rgba(255, 255, 255, 0.8);
-`;
-
-const UploadArea = styled.div`
-  border: 2px dashed #d1d5db;
-  border-radius: 1rem;
-  padding: 3rem 2rem;
+  margin-bottom: 2rem;
+  border: 2px dashed var(--color-border);
+  background: var(--color-surface-light);
   text-align: center;
-  background: rgba(249, 250, 251, 0.5);
-  transition: all 0.3s ease;
+  padding: 3rem;
   cursor: pointer;
+  transition: all var(--transition-normal);
   
   &:hover {
-    border-color: #3b82f6;
-    background: rgba(59, 130, 246, 0.05);
+    border-color: var(--color-primary);
+    background: var(--color-surface-hover);
   }
   
-  &.dragover {
-    border-color: #10b981;
-    background: rgba(16, 185, 129, 0.05);
+  &.dragging {
+    border-color: var(--color-primary);
+    background: var(--color-surface-hover);
+    box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.2);
+  }
+  
+  &.uploading {
+    border-color: var(--color-success);
+    background: var(--color-surface-light);
   }
 `;
 
 const UploadIcon = styled.div`
   font-size: 3rem;
+  color: var(--color-primary);
   margin-bottom: 1rem;
-  color: #6b7280;
 `;
 
-const UploadText = styled.div`
-  font-size: 1.125rem;
-  color: #374151;
+const UploadText = styled.p`
+  font-size: var(--font-size-lg);
+  color: var(--color-text);
   margin-bottom: 0.5rem;
 `;
 
-const UploadSubtext = styled.div`
-  font-size: 0.875rem;
-  color: #6b7280;
+const UploadSubtext = styled.p`
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  margin-bottom: 1.5rem;
 `;
 
 const FileInput = styled.input`
   display: none;
 `;
 
-const UploadButton = styled(Button)`
-  background: linear-gradient(135deg, #8b5cf6, #7c3aed);
-  border: none;
-  padding: 1rem 2rem;
-  border-radius: 1rem;
-  font-weight: 600;
-  margin-top: 1rem;
-  box-shadow: 
-    0 10px 15px -3px rgba(139, 92, 246, 0.3),
-    0 4px 6px -2px rgba(139, 92, 246, 0.2);
-  
-  &:hover {
-    background: linear-gradient(135deg, #7c3aed, #6d28d9);
-    transform: translateY(-2px);
-    box-shadow: 
-      0 20px 25px -5px rgba(139, 92, 246, 0.4),
-      0 10px 10px -5px rgba(139, 92, 246, 0.3);
-  }
-`;
-
-const DocumentsGrid = styled(Grid3)`
-  margin-bottom: 2rem;
-`;
-
-const DocumentCard = styled(Card)`
-  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
-  border: 2px solid rgba(255, 255, 255, 0.8);
-  box-shadow: 
-    0 20px 25px -5px rgba(0, 0, 0, 0.1),
-    0 10px 10px -5px rgba(0, 0, 0, 0.04),
-    inset 0 1px 0 rgba(255, 255, 255, 0.8);
-  transition: all 0.3s ease;
-  position: relative;
+const ProgressBar = styled.div`
+  width: 100%;
+  height: 8px;
+  background: var(--color-surface);
+  border-radius: var(--radius-full);
   overflow: hidden;
+  margin: 1rem 0;
+`;
+
+const ProgressFill = styled.div`
+  height: 100%;
+  background: linear-gradient(90deg, var(--color-primary), var(--color-success));
+  width: ${props => props.progress}%;
+  transition: width var(--transition-normal);
+`;
+
+const ProgressText = styled.div`
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  margin-top: 0.5rem;
+`;
+
+const FileList = styled.div`
+  margin-top: 1rem;
+`;
+
+const FileItem = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem;
+  background: var(--color-surface);
+  border-radius: var(--radius-md);
+  margin-bottom: 0.5rem;
+  border: 1px solid var(--color-border);
+`;
+
+const FileInfo = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+`;
+
+const FileIcon = styled.div`
+  font-size: 1.5rem;
+`;
+
+const FileDetails = styled.div`
+  display: flex;
+  flex-direction: column;
+`;
+
+const FileName = styled.span`
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text);
+`;
+
+const FileSize = styled.span`
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+`;
+
+const FileStatus = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+`;
+
+const StatusIcon = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  
+  &.success {
+    background: var(--color-success);
+    color: white;
+  }
+  
+  &.error {
+    background: var(--color-error);
+    color: white;
+  }
+  
+  &.uploading {
+    background: var(--color-primary);
+    color: white;
+  }
+`;
+
+const DocumentsTable = styled(Card)`
+  overflow: hidden;
+`;
+
+const TableHeader = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.5rem;
+  border-bottom: 1px solid var(--color-border);
+`;
+
+const TableTitle = styled.h3`
+  margin: 0;
+  color: var(--color-text);
+  font-size: var(--font-size-xl);
+  display: flex;
+  align-items: center;
+  
+  svg {
+    margin-right: 0.75rem;
+    color: var(--color-primary);
+  }
+`;
+
+const Table = styled.table`
+  width: 100%;
+  border-collapse: collapse;
+`;
+
+const TableHead = styled.thead`
+  background: var(--color-surface-light);
+`;
+
+const Th = styled.th`
+  text-align: left;
+  padding: 1rem 1.5rem;
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text);
+  border-bottom: 1px solid var(--color-border);
+`;
+
+const Td = styled.td`
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid var(--color-border);
+  color: var(--color-text);
+`;
+
+const DocumentRow = styled.tr`
+  transition: background var(--transition-normal);
   
   &:hover {
-    transform: translateY(-4px);
-    box-shadow: 
-      0 25px 50px -12px rgba(0, 0, 0, 0.15),
-      0 20px 20px -10px rgba(0, 0, 0, 0.08),
-      inset 0 1px 0 rgba(255, 255, 255, 0.9);
+    background: var(--color-surface-hover);
   }
+`;
+
+const DocumentInfo = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+`;
+
+const DocumentName = styled.div`
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text);
+  display: flex;
+  align-items: center;
   
-  &::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 4px;
-    background: linear-gradient(90deg, #8b5cf6, #3b82f6, #10b981);
+  svg {
+    margin-right: 0.5rem;
+    color: var(--color-primary);
+    width: 16px;
+    height: 16px;
   }
-`;
-
-const DocumentIcon = styled.div`
-  font-size: 2.5rem;
-  margin-bottom: 1rem;
-  text-align: center;
-`;
-
-const DocumentName = styled.h3`
-  font-size: 1.125rem;
-  font-weight: 600;
-  color: #1f2937;
-  margin-bottom: 0.5rem;
-  text-align: center;
-  word-break: break-word;
 `;
 
 const DocumentMeta = styled.div`
-  text-align: center;
-  margin-bottom: 1rem;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
 `;
 
-const DocumentSize = styled.div`
-  font-size: 0.875rem;
-  color: #6b7280;
-  margin-bottom: 0.25rem;
-`;
-
-const DocumentDate = styled.div`
-  font-size: 0.875rem;
-  color: #6b7280;
-`;
-
-const DocumentActions = styled.div`
+const ActionButtons = styled.div`
   display: flex;
   gap: 0.5rem;
 `;
 
-const DocActionButton = styled(Button)`
+const ActionButton = styled(Button)`
   padding: 0.5rem;
-  font-size: 0.75rem;
-  border-radius: 0.5rem;
-  flex: 1;
-  min-height: auto;
-`;
-
-const ViewButton = styled(DocActionButton)`
-  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  min-width: auto;
   
-  &:hover {
-    background: linear-gradient(135deg, #2563eb, #1d4ed8);
-  }
-`;
-
-const DeleteDocButton = styled(DocActionButton)`
-  background: linear-gradient(135deg, #ef4444, #dc2626);
-  
-  &:hover {
-    background: linear-gradient(135deg, #dc2626, #b91c1c);
+  svg {
+    width: 16px;
+    height: 16px;
   }
 `;
 
 const EmptyState = styled.div`
   text-align: center;
-  padding: 4rem 2rem;
+  padding: 3rem 1.5rem;
+  color: var(--color-text-secondary);
 `;
 
 const EmptyIcon = styled.div`
-  font-size: 4rem;
+  font-size: 3rem;
   margin-bottom: 1rem;
-  opacity: 0.6;
+  opacity: 0.5;
 `;
 
-const Documents = () => {
-  const [documents, setDocuments] = useState([
-    {
-      id: 1,
-      name: 'Passport.pdf',
-      size: '2.4 MB',
-      type: 'pdf',
-      uploadDate: '2024-01-15'
-    },
-    {
-      id: 2,
-      name: 'Visa_Application.jpg',
-      size: '1.8 MB',
-      type: 'image',
-      uploadDate: '2024-01-20'
-    },
-    {
-      id: 3,
-      name: 'Travel_Insurance.pdf',
-      size: '3.1 MB',
-      type: 'pdf',
-      uploadDate: '2024-01-25'
-    }
-  ]);
+const EmptyText = styled.p`
+  margin: 0 0 1rem;
+  font-size: var(--font-size-lg);
+`;
 
+const EmptySubtext = styled.p`
+  margin: 0;
+  font-size: var(--font-size-sm);
+  opacity: 0.7;
+`;
+
+const ErrorMessage = styled.div`
+  background: var(--color-error);
+  color: white;
+  padding: 0.75rem 1rem;
+  border-radius: var(--radius-md);
+  margin: 1rem 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+`;
+
+const SuccessMessage = styled.div`
+  background: var(--color-success);
+  color: white;
+  padding: 0.75rem 1rem;
+  border-radius: var(--radius-md);
+  margin: 1rem 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+`;
+
+// File validation constants
+const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+const ALLOWED_TYPES = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png'];
+
+const formatFileSize = (bytes) => {
+  if (bytes === 0) return '0 Bytes';
+  const k = 1024;
+  const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+};
+
+const getFileIcon = (type) => {
+  if (type.startsWith('image/')) return '🖼️';
+  if (type === 'application/pdf') return '📄';
+  return '📁';
+};
+
+const Documents = () => {
+  const [documents, setDocuments] = useState([]);
   const [isDragging, setIsDragging] = useState(false);
+  const [uploadingFiles, setUploadingFiles] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [toast, setToast] = useState(null);
 
   useEffect(() => {
-    // Simulate loading documents
-    setTimeout(() => {
-      setLoading(false);
-    }, 1000);
+    fetchDocuments();
   }, []);
 
-  const handleFileUpload = (files) => {
-    const newDocs = Array.from(files).map((file, index) => ({
-      id: Date.now() + index,
-      name: file.name,
-      size: `${(file.size / (1024 * 1024)).toFixed(1)} MB`,
-      type: file.type.startsWith('image/') ? 'image' : 'pdf',
-      uploadDate: new Date().toISOString().split('T')[0]
+  const fetchDocuments = async () => {
+    try {
+      const response = await api.docs.list();
+      setDocuments(response.documents || []);
+    } catch (error) {
+      console.error('Failed to fetch documents:', error);
+      showToast('Failed to load documents', 'error');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const showToast = (message, type = 'info') => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 3000);
+  };
+
+  const validateFile = (file) => {
+    if (!ALLOWED_TYPES.includes(file.type)) {
+      return { valid: false, error: 'File type not supported. Please upload PDF or image files only.' };
+    }
+    
+    if (file.size > MAX_FILE_SIZE) {
+      return { valid: false, error: 'File size too large. Maximum size is 5MB.' };
+    }
+    
+    return { valid: true };
+  };
+
+  const handleFileUpload = async (files) => {
+    const fileArray = Array.from(files);
+    const validFiles = [];
+    const errors = [];
+
+    // Validate files
+    fileArray.forEach(file => {
+      const validation = validateFile(file);
+      if (validation.valid) {
+        validFiles.push(file);
+      } else {
+        errors.push(`${file.name}: ${validation.error}`);
+      }
+    });
+
+    // Show errors if any
+    if (errors.length > 0) {
+      showToast(errors.join('\n'), 'error');
+    }
+
+    if (validFiles.length === 0) return;
+
+    // Add files to uploading state
+    const newUploadingFiles = validFiles.map(file => ({
+      id: Date.now() + Math.random(),
+      file,
+      progress: 0,
+      status: 'uploading'
     }));
-    setDocuments([...documents, ...newDocs]);
+
+    setUploadingFiles(prev => [...prev, ...newUploadingFiles]);
+
+    // Upload each file
+    for (const uploadFile of newUploadingFiles) {
+      try {
+        await uploadSingleFile(uploadFile);
+      } catch (error) {
+        console.error('Upload failed:', error);
+        updateUploadStatus(uploadFile.id, 'error', error.message);
+      }
+    }
   };
 
-  const handleDeleteDocument = (id) => {
-    setDocuments(documents.filter(doc => doc.id !== id));
+  const uploadSingleFile = async (uploadFile) => {
+    const formData = new FormData();
+    formData.append('document', uploadFile.file);
+
+    // Simulate progress (in real app, you'd use XMLHttpRequest or fetch with progress)
+    const progressInterval = setInterval(() => {
+      setUploadingFiles(prev => prev.map(f => 
+        f.id === uploadFile.id 
+          ? { ...f, progress: Math.min(f.progress + Math.random() * 20, 90) }
+          : f
+      ));
+    }, 200);
+
+    try {
+      const response = await api.docs.upload(formData);
+      
+      clearInterval(progressInterval);
+      
+      // Complete progress
+      updateUploadStatus(uploadFile.id, 'success', null, response.document);
+      
+      // Refresh documents list
+      await fetchDocuments();
+      
+      showToast('File uploaded successfully!', 'success');
+      
+    } catch (error) {
+      clearInterval(progressInterval);
+      throw error;
+    }
   };
 
-  const getFileIcon = (type) => {
-    return type === 'pdf' ? '📄' : '🖼️';
+  const updateUploadStatus = (id, status, error = null, document = null) => {
+    setUploadingFiles(prev => prev.map(f => 
+      f.id === id 
+        ? { ...f, status, progress: status === 'success' ? 100 : f.progress, error, document }
+        : f
+    ));
+
+    // Remove from uploading after a delay
+    if (status !== 'uploading') {
+      setTimeout(() => {
+        setUploadingFiles(prev => prev.filter(f => f.id !== id));
+      }, 3000);
+    }
+  };
+
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = () => {
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    setIsDragging(false);
+    handleFileUpload(e.dataTransfer.files);
+  };
+
+  const handleFileSelect = (e) => {
+    handleFileUpload(e.target.files);
+    e.target.value = ''; // Reset input
+  };
+
+  const handleViewDocument = (document) => {
+    const url = `${import.meta.env.VITE_API_URL || 'http://localhost:4000'}/api/docs/${document.id}`;
+    window.open(url, '_blank');
+  };
+
+  const handleDeleteDocument = async (id) => {
+    if (!window.confirm('Are you sure you want to delete this document?')) {
+      return;
+    }
+
+    try {
+      await api.docs.delete(id);
+      setDocuments(prev => prev.filter(doc => doc.id !== id));
+      showToast('Document deleted successfully!', 'success');
+    } catch (error) {
+      console.error('Failed to delete document:', error);
+      showToast('Failed to delete document', 'error');
+    }
   };
 
   if (loading) {
@@ -302,75 +525,151 @@ const Documents = () => {
       
       <HeaderSection>
         <PageTitle>My Documents 📄</PageTitle>
-        <PageSubtitle>
-          Store and manage your travel documents securely
-        </PageSubtitle>
+        <PageDescription>
+          Store and manage your travel documents securely. Upload PDFs and images up to 5MB.
+        </PageDescription>
       </HeaderSection>
 
-      <UploadSection>
-        <Title style={{ marginBottom: '1.5rem', textAlign: 'center' }}>
-          Upload Documents
-        </Title>
-        <UploadArea
-          className={isDragging ? 'dragover' : ''}
-          onDragOver={(e) => {
-            e.preventDefault();
-            setIsDragging(true);
-          }}
-          onDragLeave={() => setIsDragging(false)}
-          onDrop={(e) => {
-            e.preventDefault();
-            setIsDragging(false);
-            handleFileUpload(e.dataTransfer.files);
-          }}
-          onClick={() => document.getElementById('fileInput').click()}
-        >
-          <UploadIcon>📤</UploadIcon>
-          <UploadText>Drop files here or click to upload</UploadText>
-          <UploadSubtext>Supports PDF and JPG files up to 5MB</UploadSubtext>
-          <FileInput
-            id="fileInput"
-            type="file"
-            multiple
-            accept=".pdf,.jpg,.jpeg"
-            onChange={(e) => handleFileUpload(e.target.files)}
-          />
-          <UploadButton type="button">
-            📁 Choose Files
-          </UploadButton>
-        </UploadArea>
+      <UploadSection
+        className={`${isDragging ? 'dragging' : ''} ${uploadingFiles.length > 0 ? 'uploading' : ''}`}
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
+        onClick={() => document.getElementById('fileInput').click()}
+      >
+        <FileInput
+          id="fileInput"
+          type="file"
+          multiple
+          accept=".pdf,.jpg,.jpeg,.png"
+          onChange={handleFileSelect}
+        />
+        
+        <UploadIcon>
+          <Upload size={48} />
+        </UploadIcon>
+        
+        <UploadText>Drop files here or click to upload</UploadText>
+        <UploadSubtext>
+          Supports PDF, JPG, and PNG files up to 5MB
+        </UploadSubtext>
+
+        {uploadingFiles.length > 0 && (
+          <FileList>
+            {uploadingFiles.map((uploadFile) => (
+              <FileItem key={uploadFile.id}>
+                <FileInfo>
+                  <FileIcon>{getFileIcon(uploadFile.file.type)}</FileIcon>
+                  <FileDetails>
+                    <FileName>{uploadFile.file.name}</FileName>
+                    <FileSize>{formatFileSize(uploadFile.file.size)}</FileSize>
+                  </FileDetails>
+                </FileInfo>
+                
+                <FileStatus>
+                  {uploadFile.status === 'uploading' && (
+                    <>
+                      <ProgressBar>
+                        <ProgressFill progress={uploadFile.progress} />
+                      </ProgressBar>
+                      <ProgressText>{Math.round(uploadFile.progress)}%</ProgressText>
+                    </>
+                  )}
+                  
+                  {uploadFile.status === 'success' && (
+                    <StatusIcon className="success">
+                      <CheckCircle size={16} />
+                    </StatusIcon>
+                  )}
+                  
+                  {uploadFile.status === 'error' && (
+                    <StatusIcon className="error">
+                      <X size={16} />
+                    </StatusIcon>
+                  )}
+                </FileStatus>
+              </FileItem>
+            ))}
+          </FileList>
+        )}
       </UploadSection>
 
       {documents.length > 0 ? (
-        <DocumentsGrid>
-          {documents.map((doc) => (
-            <DocumentCard key={doc.id}>
-              <DocumentIcon>{getFileIcon(doc.type)}</DocumentIcon>
-              <DocumentName>{doc.name}</DocumentName>
-              <DocumentMeta>
-                <DocumentSize>{doc.size}</DocumentSize>
-                <DocumentDate>{new Date(doc.uploadDate).toLocaleDateString()}</DocumentDate>
-              </DocumentMeta>
-              <DocumentActions>
-                <ViewButton>👁️ View</ViewButton>
-                <DeleteDocButton onClick={() => handleDeleteDocument(doc.id)}>
-                  🗑️ Delete
-                </DeleteDocButton>
-              </DocumentActions>
-            </DocumentCard>
-          ))}
-        </DocumentsGrid>
+        <DocumentsTable>
+          <TableHeader>
+            <TableTitle>
+              <FileText />
+              Your Documents ({documents.length})
+            </TableTitle>
+          </TableHeader>
+          
+          <Table>
+            <TableHead>
+              <tr>
+                <Th>Document</Th>
+                <Th>Type</Th>
+                <Th>Size</Th>
+                <Th>Upload Date</Th>
+                <Th>Actions</Th>
+              </tr>
+            </TableHead>
+            <tbody>
+              {documents.map((doc) => (
+                <DocumentRow key={doc.id}>
+                  <Td>
+                    <DocumentInfo>
+                      <DocumentName>
+                        {getFileIcon(doc.mime_type || 'application/pdf')}
+                        {doc.filename}
+                      </DocumentName>
+                      <DocumentMeta>
+                        ID: {doc.id}
+                      </DocumentMeta>
+                    </DocumentInfo>
+                  </Td>
+                  <Td>
+                    <span style={{ 
+                      padding: '0.25rem 0.5rem', 
+                      background: 'var(--color-surface-light)', 
+                      borderRadius: 'var(--radius-sm)',
+                      fontSize: 'var(--font-size-sm)'
+                    }}>
+                      {doc.mime_type || 'application/pdf'}
+                    </span>
+                  </Td>
+                  <Td>{formatFileSize(doc.file_size || 0)}</Td>
+                  <Td>
+                    {new Date(doc.uploaded_at).toLocaleDateString()}
+                  </Td>
+                  <Td>
+                    <ActionButtons>
+                      <ActionButton variant="secondary" onClick={() => handleViewDocument(doc)}>
+                        <Eye />
+                      </ActionButton>
+                      <ActionButton variant="error" onClick={() => handleDeleteDocument(doc.id)}>
+                        <Trash2 />
+                      </ActionButton>
+                    </ActionButtons>
+                  </Td>
+                </DocumentRow>
+              ))}
+            </tbody>
+          </Table>
+        </DocumentsTable>
       ) : (
         <EmptyState>
           <EmptyIcon>📄</EmptyIcon>
-          <Title style={{ marginBottom: '1rem' }}>No Documents Yet</Title>
-          <Text style={{ color: '#6b7280', marginBottom: '2rem' }}>
+          <EmptyText>No Documents Yet</EmptyText>
+          <EmptySubtext>
             Upload your travel documents to keep them organized and accessible!
-          </Text>
-          <UploadButton onClick={() => document.getElementById('fileInput').click()}>
-            📤 Upload Your First Document
-          </UploadButton>
+          </EmptySubtext>
         </EmptyState>
+      )}
+
+      {toast && (
+        <Toast className={`toast-${toast.type}`}>
+          {toast.message}
+        </Toast>
       )}
     </DocumentsContainer>
   );

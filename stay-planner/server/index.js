@@ -54,6 +54,72 @@ app.get('/api/db/status', (req, res) => {
   }
 });
 
+// Status endpoint for today's Schengen status
+app.get('/api/status/today', requireAuth, (req, res) => {
+  try {
+    const today = new Date().toISOString().split('T')[0];
+    
+    // Get user's trips
+    const trips = db.listTripsByUser(req.user.id);
+    console.log('🔍 Debug - User trips:', trips);
+    
+    // Calculate remaining days using the rules
+    const { schengenRemainingDays, schengenAvailabilitySummary } = require('./lib/rules');
+    const schengenResult = schengenRemainingDays(trips, new Date(today));
+    console.log('🔍 Debug - Schengen result:', schengenResult);
+    
+    const remaining = schengenResult.remaining; // Extract the remaining property
+    console.log('🔍 Debug - Remaining days:', remaining);
+    
+    // Get forecasting data
+    const forecast = schengenAvailabilitySummary(trips, today);
+    
+    // Determine status level
+    let level = 'ok';
+    if (remaining <= 0) {
+      level = 'critical';
+    } else if (remaining <= 15) {
+      level = 'warn';
+    }
+    
+    const response = {
+      level,
+      remaining,
+      date: today,
+      currentWindow: {
+        start: schengenResult.windowStart,
+        end: schengenResult.windowEnd,
+        used: schengenResult.used
+      },
+      forecasting: {
+        nextMonth: {
+          available: forecast.nextMonth.available,
+          used: forecast.nextMonth.used
+        },
+        next3Months: {
+          available: forecast.next3Months.available,
+          used: forecast.next3Months.used
+        },
+        next6Months: {
+          available: forecast.next6Months.available,
+          used: forecast.next6Months.used
+        }
+      }
+    };
+    
+    console.log('🔍 Debug - Final response:', response);
+    res.json(response);
+    
+  } catch (error) {
+    console.error('Status calculation error:', error);
+    res.status(500).json({ 
+      error: 'Failed to calculate status',
+      level: 'ok',
+      remaining: 0
+    });
+  }
+});
+
 // Auth routes
 app.use('/api/auth', authRoutes);
 

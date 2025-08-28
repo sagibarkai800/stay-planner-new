@@ -166,6 +166,11 @@ const Dashboard = () => {
     tripsCount: 0,
     documentsCount: 0
   });
+  const [forecasting, setForecasting] = useState({
+    nextMonth: { available: 0, used: 0 },
+    next3Months: { available: 0, used: 0 },
+    next6Months: { available: 0, used: 0 }
+  });
   const [recentTrips, setRecentTrips] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -176,21 +181,25 @@ const Dashboard = () => {
         const tripsResponse = await api.trips.list();
         const trips = tripsResponse.trips || [];
         
-        // Fetch Schengen status for today
-        const today = new Date().toISOString().split('T')[0];
-        const schengenResponse = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:4000'}/api/calcs/schengen?date=${today}`, {
+        // Fetch Schengen status for today using the new status endpoint
+        const statusResponse = await fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:4000'}/api/status/today`, {
           credentials: 'include'
         });
-        const schengenData = schengenResponse.ok ? await schengenResponse.json() : { remaining: 0 };
+        const statusData = statusResponse.ok ? await statusResponse.json() : { level: 'ok', remaining: 0 };
         
         // Fetch documents count (you can implement this API endpoint)
         const documentsCount = 0; // Placeholder until documents API is implemented
         
         setStats({
-          schengenDays: schengenData.remaining || 0,
+          schengenDays: statusData.remaining || 0,
           tripsCount: trips.length,
           documentsCount: documentsCount
         });
+        
+        // Set forecasting data
+        if (statusData.forecasting) {
+          setForecasting(statusData.forecasting);
+        }
         
         // Get recent trips (last 3)
         setRecentTrips(trips.slice(0, 3));
@@ -294,6 +303,52 @@ const Dashboard = () => {
             View Reports
           </ActionButton>
         </QuickActionsGrid>
+      </div>
+
+      <div>
+        <SectionTitle>Schengen Availability Forecast</SectionTitle>
+        <SectionSubtitle>Plan your future travel with confidence</SectionSubtitle>
+        
+        <Grid3>
+          <StatCard>
+            <StatIcon>
+              <Icon>📅</Icon>
+            </StatIcon>
+            <StatValue style={{ color: getStatusColor(forecasting.nextMonth.available) }}>
+              {forecasting.nextMonth.available}
+            </StatValue>
+            <StatLabel>Next Month</StatLabel>
+            <div style={{ fontSize: '0.875rem', color: '#6b7280', marginTop: '0.5rem' }}>
+              {forecasting.nextMonth.used} days used
+            </div>
+          </StatCard>
+
+          <StatCard>
+            <StatIcon>
+              <Icon>📆</Icon>
+            </StatIcon>
+            <StatValue style={{ color: getStatusColor(forecasting.next3Months.available) }}>
+              {forecasting.next3Months.available}
+            </StatValue>
+            <StatLabel>Next 3 Months</StatLabel>
+            <div style={{ fontSize: '0.875rem', color: '#6b7280', marginTop: '0.5rem' }}>
+              {forecasting.next3Months.used} days used
+            </div>
+          </StatCard>
+
+          <StatCard>
+            <StatIcon>
+              <Icon>🗓️</Icon>
+            </StatIcon>
+            <StatValue style={{ color: getStatusColor(forecasting.next6Months.available) }}>
+              {forecasting.next6Months.available}
+            </StatValue>
+            <StatLabel>Next 6 Months</StatLabel>
+            <div style={{ fontSize: '0.875rem', color: '#6b7280', marginTop: '0.5rem' }}>
+              {forecasting.next6Months.used} days used
+            </div>
+          </StatCard>
+        </Grid3>
       </div>
 
       <div>
