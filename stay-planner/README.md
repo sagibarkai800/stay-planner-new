@@ -102,9 +102,45 @@ npm run dev:web
 Create a `.env` file in the `server/` directory for backend configuration:
 
 ```env
+# Server Configuration
 PORT=4000
 NODE_ENV=development
+
+# Database
+DB_PATH=./data/app.db
+
+# JWT Secret (generate a strong secret)
+JWT_SECRET=your-super-secret-jwt-key-here
+
+# Email Configuration (optional - for alerts)
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=587
+SMTP_USER=your-email@gmail.com
+SMTP_PASS=your-app-password
+EMAIL_FROM=alerts@stayplanner.com
+
+# CORS Origins
+CORS_ORIGIN=http://localhost:5173
+
+# Flight Search Provider
+PROVIDER_FLIGHTS=skyscanner
+SKYSCANNER_API_KEY=your-skyscanner-api-key-here
+
+# Accommodation Booking
+BOOKING_AFFILIATE_ID=your-booking-affiliate-id
+BOOKING_AID_PARAM=aid
+
+# Airbnb Deep Links
+AIRBNB_ENABLE_DEEPLINKS=true
 ```
+
+### Provider Configuration
+
+- **Flights**: Currently supports Skyscanner. Set `SKYSCANNER_API_KEY` for live data, or run in mock mode.
+- **Accommodations**: Booking.com affiliate integration with `BOOKING_AFFILIATE_ID`.
+- **Airbnb**: Deep link support when `AIRBNB_ENABLE_DEEPLINKS=true`.
+
+See `server/env.example` for complete configuration options.
 
 ## Code Quality
 

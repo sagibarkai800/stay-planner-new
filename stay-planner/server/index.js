@@ -13,9 +13,20 @@ const calcsRoutes = require('./routes/calcs');
 const docsRoutes = require('./routes/docs');
 const { requireAuth } = require('./middleware/auth');
 const { initSchengenAlerts } = require('./cron/schengenAlerts');
+const { 
+  isFlightProviderEnabled, 
+  isBookingEnabled, 
+  isAirbnbEnabled 
+} = require('./config/providers');
 
 const app = express();
 const PORT = process.env.PORT || 4000;
+
+// Log provider configuration
+console.log('🔧 Provider Configuration:');
+console.log(`  Flights: ${isFlightProviderEnabled() ? 'Skyscanner API enabled' : 'Mock mode (no API key)'}`);
+console.log(`  Booking: ${isBookingEnabled() ? 'Affiliate integration enabled' : 'No affiliate ID'}`);
+console.log(`  Airbnb: ${isAirbnbEnabled() ? 'Deep links enabled' : 'Deep links disabled'}`);
 
 // Middleware
 app.use(cors({
@@ -52,6 +63,26 @@ app.get('/api/db/status', (req, res) => {
       details: error.message 
     });
   }
+});
+
+// Provider status endpoint
+app.get('/api/providers/status', (req, res) => {
+  res.json({
+    flights: {
+      provider: 'skyscanner',
+      enabled: isFlightProviderEnabled(),
+      mode: isFlightProviderEnabled() ? 'live' : 'mock'
+    },
+    accommodation: {
+      booking: {
+        enabled: isBookingEnabled(),
+        affiliateId: isBookingEnabled() ? 'configured' : 'not configured'
+      },
+      airbnb: {
+        deepLinksEnabled: isAirbnbEnabled()
+      }
+    }
+  });
 });
 
 // Status endpoint for today's Schengen status
@@ -158,6 +189,7 @@ app.listen(PORT, () => {
   console.log(`🚀 Server is running on http://localhost:${PORT}`);
   console.log(`📊 Health check: http://localhost:4000/api/health`);
   console.log(`🗄️  Database status: http://localhost:4000/api/db/status`);
+  console.log(`🔧 Provider status: http://localhost:4000/api/providers/status`);
   console.log(`🔐 Auth endpoints: http://localhost:4000/api/auth`);
   console.log(`📋 Rules endpoints: http://localhost:4000/api/rules`);
   console.log(`✈️  Trips endpoints: http://localhost:4000/api/trips`);
